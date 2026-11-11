@@ -33,9 +33,15 @@ My unofficial, self-study version of CMU's 10-411 ([course page](https://10-411.
 
 Reference: [the UIR format and conventions](uir.md).
 
-## Using it
+## Doing the course
 
-Each week: read the chapter, write tests in UIR, check them with the [oracle](oracle/README.md) (`python3 -I oracle/uir.py test.uir`), and extend your compiler until it passes them.
+1. Fork this repo and write your compiler in [compiler/](compiler/README.md), in any language.
+2. Each week, read the chapter, write your own tests in [tests/](tests/README.md), and check them with the [oracle](oracle/README.md): `python3 -I oracle/uir.py tests/week1/*.uir`.
+3. Extend your compiler until it agrees with the oracle on every example and test so far:
+
+   ```sh
+   python3 -I tools/check_compiler.py --week 1 -- <your compiler command>
+   ```
 
 Where the syllabus is silent, the chapters follow [tinygrad](https://github.com/tinygrad/tinygrad) and say so. To read the tinygrad files they cite:
 
