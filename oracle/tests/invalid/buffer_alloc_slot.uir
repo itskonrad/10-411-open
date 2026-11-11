@@ -1,0 +1,7 @@
+# expect: arg: buffer slot 0
+# BUFFER and ALLOC share one slot numbering.
+%a    = buffer [] slot=0 dtype=i32
+%b    = alloc [] slot=0 dtype=i32
+%sa   = store %a 1
+%sb   = store %b 2
+%test = assert (after %a %sa %sb) 1

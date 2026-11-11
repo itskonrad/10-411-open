@@ -1,0 +1,10 @@
+# Two stores in one loop: AFTER groups them into one effect for END.
+# a[i] = i, b[i] = i * 10
+%a    = buffer 3 slot=0 dtype=i32
+%b    = buffer 3 slot=1 dtype=i32
+%i    = range 3 slot=0
+%sa   = store (index %a %i) %i
+%sb   = store (index %b %i) (mul %i 10)
+%done = end (after %sb %sa) %i
+%sum  = add (load (index (after %a %done) 2)) (load (index (after %b %done) 1))
+%test = assert %sum 12

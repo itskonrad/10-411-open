@@ -1,0 +1,19 @@
+# A 2x2 matrix multiply C = A @ B, written with loops. Matrices are stored row-major.
+# A = [[1 2] [3 4]], B = [[5 6] [7 8]], C[i][j] = sum over k of A[i][k] * B[k][j]:
+# C = [[1*5 + 2*7, 1*6 + 2*8], [3*5 + 4*7, 3*6 + 4*8]] = [[19 22] [43 50]].
+%A    = buffer 4 slot=0 dtype=f32
+%B    = buffer 4 slot=1 dtype=f32
+%C    = buffer 4 slot=2 dtype=f32
+%sa   = store %A [1 2 3 4]
+%sb   = store %B [5 6 7 8]
+%i    = range 2 slot=0
+%j    = range 2 slot=1
+%k    = range 2 slot=2
+%init = store (index %C (add (mul %i 2) %j)) 0
+%acc  = after %C %init %k
+%cij  = index %acc (add (mul %i 2) %j)
+%a    = load (index (after %A %sa) (add (mul %i 2) %k))
+%b    = load (index (after %B %sb) (add (mul %k 2) %j))
+%step = store %cij (add (load %cij) (mul %a %b))
+%done = end (end (end %step %k) %j) %i
+%test = assert (after %C %done) [19 22 43 50]

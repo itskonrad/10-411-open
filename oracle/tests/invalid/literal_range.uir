@@ -1,0 +1,4 @@
+# expect: dtype
+# Integer literals must fit in i32.
+%x    = add 2147483648 0
+%test = assert %x 0

@@ -1,0 +1,8 @@
+# expect: range: ended twice
+# One range, two ENDs: group the effects with after and end once.
+%a    = buffer 3 slot=0 dtype=i32
+%b    = buffer 3 slot=1 dtype=i32
+%i    = range 3 slot=0
+%ea   = end (store (index %a %i) %i) %i
+%eb   = end (store (index %b %i) %i) %i
+%test = assert (after %a %ea %eb) [0 1 2]

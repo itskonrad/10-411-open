@@ -1,0 +1,3 @@
+# expect: fail
+# A valid program whose assert does not hold: 2 + 2 is 4.
+%test = assert (add 2 2) 5

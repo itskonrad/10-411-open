@@ -1,0 +1,4 @@
+# RECIP works on f32 only, so the i32 literal is cast first.
+# 1 / 4.0 = 0.25, which f32 represents exactly.
+%r    = recip (cast 4 dtype=f32)
+%test = assert %r 0.25

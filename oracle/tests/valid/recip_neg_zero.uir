@@ -1,0 +1,2 @@
+# recip -0.0 is -inf.
+%test = assert (recip -0.0) -inf

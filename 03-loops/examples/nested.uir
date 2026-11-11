@@ -1,0 +1,9 @@
+# Two nested loops fill a 2x3 table stored row-major: t[i*3 + j] = i*10 + j.
+# Row 0 is [0 1 2], row 1 is [10 11 12].
+# Bounds: i in [0, 1], j in [0, 2], so i*3 + j is in [0, 5]: always inside the buffer of 6.
+%t    = buffer 6 slot=0 dtype=i32
+%i    = range 2 slot=0
+%j    = range 3 slot=1
+%put  = store (index %t (add (mul %i 3) %j)) (add (mul %i 10) %j)
+%done = end (end %put %j) %i
+%test = assert (after %t %done) [0 1 2 10 11 12]

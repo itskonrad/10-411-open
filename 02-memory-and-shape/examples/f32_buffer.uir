@@ -1,0 +1,6 @@
+# Literals stored into an f32 buffer are read as f32: [1 2] becomes [1.0 2.0].
+# Element 1 is 2.0, and 2.0 * 0.5 = 1.0.
+%fb   = buffer 2 slot=0 dtype=f32
+%w    = store %fb [1 2]
+%x    = mul (load (index (after %fb %w) 1)) 0.5
+%test = assert %x 1

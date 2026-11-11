@@ -1,0 +1,6 @@
+# STORE a whole stack into a rank-1 buffer, then LOAD one element through INDEX.
+# The buffer holds [10 20 30]; element 1 is 20.
+%buf  = buffer 3 slot=0 dtype=i32
+%init = store %buf [10 20 30]
+%x    = load (index (after %buf %init) 1)
+%test = assert %x 20

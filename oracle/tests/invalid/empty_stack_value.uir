@@ -1,0 +1,3 @@
+# expect: shape
+# [] is only a shape (for param, buffer, alloc), never a value.
+%test = assert [] []

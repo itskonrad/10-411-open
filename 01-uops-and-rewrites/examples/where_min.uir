@@ -1,0 +1,6 @@
+# WHERE picks between two values; with CMPLT it computes min(a, b).
+# cmplt 3 5 is true, so the result is the then-value, 3.
+%a    = 3
+%b    = 5
+%min  = where (cmplt %a %b) %a %b
+%test = assert %min 3

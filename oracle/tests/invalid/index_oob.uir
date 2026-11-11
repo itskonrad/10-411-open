@@ -1,0 +1,4 @@
+# expect: bounds
+# Index 3 is outside [0, 2].
+%x    = index [10 20 30] 3
+%test = assert %x 30

@@ -1,0 +1,5 @@
+# expect: dtype: effect
+# END's first source must be an effect, not a value.
+%i    = range 3 slot=0
+%e    = end (add %i 1) %i
+%test = assert 1 1

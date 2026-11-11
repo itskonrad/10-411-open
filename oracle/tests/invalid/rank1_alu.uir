@@ -1,0 +1,4 @@
+# expect: rank
+# ALU ops are rank 0 (spec week 1): adding to a rank-1 stack is invalid until week 4.
+%x    = add [1 2] 1
+%test = assert %x [2 3]

@@ -1,0 +1,4 @@
+# expect: dtype
+# WHERE's condition must be bool.
+%x    = where 1 2 3
+%test = assert %x 2

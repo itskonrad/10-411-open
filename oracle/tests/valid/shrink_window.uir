@@ -1,0 +1,6 @@
+# SHRINK(buffer, offset, size) is a window: store [7 8] into elements 1 and 2 of a 4-element buffer.
+%buf  = buffer 4 slot=0 dtype=i32
+%init = store %buf [0 0 0 0]
+%win  = shrink (after %buf %init) 1 2
+%put  = store %win [7 8]
+%test = assert (after %buf %put) [0 7 8 0]

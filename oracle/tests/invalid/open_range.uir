@@ -1,0 +1,6 @@
+# expect: range: never ended
+# The store is inside loop i, but nothing ends the loop.
+%buf  = buffer 3 slot=0 dtype=i32
+%i    = range 3 slot=0
+%put  = store (index %buf %i) %i
+%test = assert (after %buf %put) [0 1 2]

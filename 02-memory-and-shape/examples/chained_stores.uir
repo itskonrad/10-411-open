@@ -1,0 +1,7 @@
+# Each access waits for the store before it, so loads and stores are fully ordered.
+# b[0] = 1; b[1] = b[0] + 1, so the buffer ends as [1 2].
+%b    = buffer 2 slot=0 dtype=i32
+%s0   = store (index %b 0) 1
+%b1   = after %b %s0
+%s1   = store (index %b1 1) (add (load (index %b1 0)) 1)
+%test = assert (after %b %s1) [1 2]

@@ -1,0 +1,4 @@
+# expect: dtype: recip does not take i32
+# RECIP is f32 only: cast an i32 first.
+%r    = recip 4
+%test = assert %r 0.25

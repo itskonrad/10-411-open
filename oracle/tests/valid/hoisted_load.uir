@@ -1,0 +1,8 @@
+# uir.md Evaluation: a node that does not depend on a loop runs once, before the loop.
+# a = [5 0 0]; for k in 0..2: a[k] = a[0] + 1. The load of a[0] does not use k, so it runs once and reads 5:
+# a ends as [6 6 6]. (Reloading a[0] every iteration would give [6 7 7].)
+%a    = buffer 3 slot=0 dtype=i32
+%a0   = after %a (store %a [5 0 0])
+%k    = range 3 slot=0
+%put  = store (index %a0 %k) (add (load (index %a0 0)) 1)
+%test = assert (after %a (end %put %k)) [6 6 6]

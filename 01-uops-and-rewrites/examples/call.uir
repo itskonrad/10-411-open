@@ -1,0 +1,8 @@
+# A function f(x, y) = x*x + y, called with x = 3, y = 4.
+# The body's PARAMs are slots 0 and 1; CALL's sources after the body fill them in order.
+# 3*3 + 4 = 13
+%x    = param [] slot=0 dtype=i32
+%y    = param [] slot=1 dtype=i32
+%f    = add (mul %x %x) %y
+%r    = call %f 3 4
+%test = assert %r 13

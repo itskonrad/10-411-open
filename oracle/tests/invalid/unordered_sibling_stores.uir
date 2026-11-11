@@ -1,0 +1,8 @@
+# expect: order
+# Two loops both store into %a, and neither waits for the other.
+%a    = buffer 3 slot=0 dtype=i32
+%i    = range 3 slot=0
+%j    = range 3 slot=1
+%d1   = end (store (index %a %i) 1) %i
+%d2   = end (store (index %a %j) 2) %j
+%test = assert (after %a %d1 %d2) [2 2 2]

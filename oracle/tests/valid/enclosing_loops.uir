@@ -1,0 +1,13 @@
+# uir.md Evaluation: a node runs once per value of its loops and of the loops around them.
+# %A uses only k, but k's END uses o (through %B), so loop k is inside loop o and %A runs 2 * 3 = 6 times.
+# z counts them: 6, as compiled C gives.
+%z    = buffer [] slot=0 dtype=i32
+%y    = buffer 6 slot=1 dtype=i32
+%iz   = store %z 0
+%o    = range 2 slot=0
+%k    = range 3 slot=1
+%az   = after %z %iz %k
+%A    = store %az (add (load %az) 1)
+%B    = store (index %y (add (mul %o 3) %k)) 1
+%e    = end (end (after %A %B) %k) %o
+%test = assert (load (after %z %e)) 6

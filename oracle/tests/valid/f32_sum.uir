@@ -1,0 +1,2 @@
+# In f32, 0.1 + 0.2 rounds to the same f32 as 0.3 (both are 0.300000011920928955...).
+%test = assert (add 0.1 0.2) 0.3

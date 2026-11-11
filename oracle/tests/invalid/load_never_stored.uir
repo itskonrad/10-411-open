@@ -1,0 +1,6 @@
+# expect: undefined: never stored
+# A buffer's contents are undefined until stored.
+%buf  = buffer 2 slot=0 dtype=i32
+%put  = store (index %buf 0) 5
+%x    = load (index (after %buf %put) 1)
+%test = assert %x 0

@@ -1,0 +1,12 @@
+# A running sum in a one-element accumulator: acc = 0, then acc += x[i] for each i.
+# x = [1 2 3 4], so the sum is 10.
+# `after %acc %init %i` is the accumulator inside loop i, after its initial store.
+%x    = buffer 4 slot=0 dtype=i32
+%acc  = alloc [] slot=1 dtype=i32
+%sx   = store %x [1 2 3 4]
+%init = store %acc 0
+%i    = range 4 slot=0
+%a    = after %acc %init %i
+%step = store %a (add (load %a) (load (index (after %x %sx) %i)))
+%done = end %step %i
+%test = assert (load (after %acc %done)) 10

@@ -1,0 +1,5 @@
+# expect: bounds
+# Validation uses bounds as written: a PARAM has the full i32 range, even though the call passes 1.
+%p    = param [] slot=0 dtype=i32
+%g    = index [10 20 30] %p
+%test = assert (call %g 1) 20

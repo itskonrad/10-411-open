@@ -1,0 +1,7 @@
+# The draft course page's week 3 example, with the spec's `buffer` (the page writes `extern`).
+# One loop: buf[i] = i for i = 0, 1, 2, so the buffer ends as [0 1 2].
+%buf   = buffer 3 slot=0 dtype=i32
+%i     = range 3 slot=0
+%write = store (index %buf %i) %i
+%done  = end %write %i
+%test  = assert (after %buf %done) [0 1 2]

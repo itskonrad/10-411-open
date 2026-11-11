@@ -1,0 +1,2 @@
+# -1.0 * 0.0 is -0.0, and ASSERT compares numerically: -0.0 equals 0.0.
+%test = assert (mul -1.0 0.0) 0.0

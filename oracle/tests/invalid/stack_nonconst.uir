@@ -1,0 +1,5 @@
+# expect: stack
+# Until week 4, STACK inputs are constants (spec week 1).
+%p    = param [] slot=0 dtype=i32
+%v    = [%p 2]
+%test = assert (call (index %v 0) 1) 1

@@ -1,0 +1,4 @@
+# expect: op
+# reshape is a week-5 op.
+%x    = reshape [1 2 3 4] [4]
+%test = assert %x [1 2 3 4]

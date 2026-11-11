@@ -1,0 +1,9 @@
+# expect: range: both in a call body and outside
+# The loop %i is used outside the call (to index %out) and inside its body: a loop belongs to one scope.
+%x    = param [] slot=0 dtype=i32
+%i    = range 3 slot=0
+%t    = alloc 3 slot=0 dtype=i32
+%f    = load (index (after %t (end (store (index %t %i) %x) %i)) 0)
+%out  = buffer 3 slot=1 dtype=i32
+%done = end (store (index %out %i) (call %f %i)) %i
+%test = assert (after %out %done) [0 1 2]

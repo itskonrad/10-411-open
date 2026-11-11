@@ -1,0 +1,4 @@
+# expect: arg
+# add takes no args.
+%x    = add 1 2 dtype=i32
+%test = assert %x 3

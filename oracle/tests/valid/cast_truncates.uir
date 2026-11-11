@@ -1,0 +1,2 @@
+# cast f32 -> i32 truncates toward zero: -2.7 becomes -2.
+%test = assert (cast -2.7 dtype=i32) -2

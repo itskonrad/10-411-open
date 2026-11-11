@@ -1,0 +1,8 @@
+# A call body may contain its own loop; each call is its own activation, with its own ALLOC.
+# f(x) fills t[i] = x + i for i in 0..2 and returns t[2] = x + 2. f(1) + f(10) = 3 + 12 = 15.
+%x    = param [] slot=0 dtype=i32
+%t    = alloc 3 slot=0 dtype=i32
+%i    = range 3 slot=0
+%fill = end (store (index %t %i) (add %x %i)) %i
+%f    = load (index (after %t %fill) 2)
+%test = assert (add (call %f 1) (call %f 10)) 15

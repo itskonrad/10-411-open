@@ -1,0 +1,2 @@
+# shl a b is a * 2^b, wrapped, for negative a too: -1 * 2^31 = -2147483648.
+%test = assert (shl -1 31) -2147483648

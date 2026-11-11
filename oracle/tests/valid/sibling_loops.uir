@@ -1,0 +1,8 @@
+# Two loops in a row, ordered by after: a[i] = i, then b[j] = a[j] * 2.
+%a    = buffer 3 slot=0 dtype=i32
+%b    = buffer 3 slot=1 dtype=i32
+%i    = range 3 slot=0
+%j    = range 3 slot=1
+%da   = end (store (index %a %i) %i) %i
+%db   = end (store (index %b %j) (mul (load (index (after %a %da) %j)) 2)) %j
+%test = assert (after %b %db) [0 2 4]

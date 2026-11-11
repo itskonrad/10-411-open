@@ -1,0 +1,4 @@
+# The smallest program: one ALU op and one assert (from the draft course page).
+# 2 + 3 = 5
+%sum  = add 2 3
+%test = assert %sum 5

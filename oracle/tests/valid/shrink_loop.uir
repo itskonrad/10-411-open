@@ -1,0 +1,9 @@
+# A symbolic SHRINK offset: copy src[2i .. 2i+1] to dst[2i .. 2i+1] for i in 0..1, one 2-element window per step.
+# The offset 2i is in [0, 2], so the window [2i, 2i+1] stays inside [0, 3].
+%src  = buffer 4 slot=0 dtype=f32
+%dst  = buffer 4 slot=1 dtype=f32
+%s    = after %src (store %src [0.5 1.5 2.5 3.5])
+%i    = range 2 slot=0
+%copy = store (shrink %dst (mul %i 2) 2) (load (shrink %s (mul %i 2) 2))
+%done = end %copy %i
+%test = assert (after %dst %done) [0.5 1.5 2.5 3.5]

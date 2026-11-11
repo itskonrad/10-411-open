@@ -1,0 +1,4 @@
+# expect: dtype
+# ADD takes i32 and f32, not bool.
+%x    = add true false
+%test = assert %x true

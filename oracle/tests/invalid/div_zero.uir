@@ -1,0 +1,4 @@
+# expect: undefined: div
+# Division by zero is undefined.
+%p    = param [] slot=0 dtype=i32
+%test = assert (call (div 1 %p) 0) 0

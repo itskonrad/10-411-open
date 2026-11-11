@@ -1,0 +1,4 @@
+# expect: parse
+# Scoped blocks arrive in week 6.
+%x    = { %a = add 1 2 }
+%test = assert %x 3

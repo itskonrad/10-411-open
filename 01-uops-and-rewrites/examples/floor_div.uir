@@ -1,0 +1,4 @@
+# DIV is floor division, like Python's //, not C's truncating /.
+# -7 / 2 = -3.5, and the floor of -3.5 is -4. (C would give -3.)
+%q    = div -7 2
+%test = assert %q -4

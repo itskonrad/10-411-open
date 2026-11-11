@@ -1,0 +1,4 @@
+# expect: root: last line must be an assert
+# The last line must be the assert.
+%test = assert (add 1 2) 3
+%x    = add 1 2

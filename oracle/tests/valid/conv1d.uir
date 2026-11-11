@@ -1,0 +1,16 @@
+# 1-D valid convolution: y[o] = sum over k of x[o+k] * w[k], x has 6 elements, w 3, y 4.
+# x = [1 2 3 4 5 6], w = [1 0 -1], so y[o] = x[o] - x[o+2] = -2 for every o.
+# Bounds: o in [0, 3], k in [0, 2], so o+k is in [0, 5]: inside x.
+%x    = buffer 6 slot=0 dtype=i32
+%w    = buffer 3 slot=1 dtype=i32
+%y    = buffer 4 slot=2 dtype=i32
+%xr   = after %x (store %x [1 2 3 4 5 6])
+%wr   = after %w (store %w [1 0 -1])
+%o    = range 4 slot=0
+%k    = range 3 slot=1
+%init = store (index %y %o) 0
+%yk   = after %y %init %k
+%prod = mul (load (index %xr (add %o %k))) (load (index %wr %k))
+%acc  = store (index %yk %o) (add (load (index %yk %o)) %prod)
+%done = end (end %acc %k) %o
+%test = assert (after %y %done) [-2 -2 -2 -2]

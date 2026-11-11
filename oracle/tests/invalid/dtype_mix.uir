@@ -1,0 +1,4 @@
+# expect: dtype
+# Typed operands of different dtypes need a cast (uir.md Mixing dtypes).
+%x    = add (cast 1 dtype=i32) (cast 1 dtype=f32)
+%test = assert %x 2

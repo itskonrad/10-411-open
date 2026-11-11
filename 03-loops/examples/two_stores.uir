@@ -1,0 +1,11 @@
+# END takes one effect, so two stores in one loop are grouped with AFTER: `after %sb %sa` is
+# the store %sb, after %sa. a[i] = i and b[i] = i * 10 give a = [0 1 2], b = [0 10 20].
+# a[2] + b[1] = 2 + 10 = 12.
+%a    = buffer 3 slot=0 dtype=i32
+%b    = buffer 3 slot=1 dtype=i32
+%i    = range 3 slot=0
+%sa   = store (index %a %i) %i
+%sb   = store (index %b %i) (mul %i 10)
+%done = end (after %sb %sa) %i
+%sum  = add (load (index (after %a %done) 2)) (load (index (after %b %done) 1))
+%test = assert %sum 12

@@ -1,0 +1,10 @@
+# Two loops one after the other: the first writes a, the second reads a after the first loop ends.
+# a[i] = i + 1 gives [1 2 3]; then b[i] = a[i] * a[i] gives [1 4 9].
+%a     = buffer 3 slot=0 dtype=i32
+%b     = buffer 3 slot=1 dtype=i32
+%i     = range 3 slot=0
+%fill  = end (store (index %a %i) (add %i 1)) %i
+%j     = range 3 slot=1
+%v     = load (index (after %a %fill) %j)
+%sq    = end (store (index %b %j) (mul %v %v)) %j
+%test  = assert (after %b %sq) [1 4 9]

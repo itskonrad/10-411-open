@@ -1,0 +1,13 @@
+# A node inside loop k runs once per value of k AND of every loop around k, even if it never uses that loop.
+# Loop o (2 values) encloses loop k (3 values). The counter step uses only k, but runs 2 * 3 = 6 times,
+# so the counter ends at 6. (The store into y uses o, which puts loop k inside loop o.)
+%z    = buffer [] slot=0 dtype=i32
+%y    = buffer 6 slot=1 dtype=i32
+%iz   = store %z 0
+%o    = range 2 slot=0
+%k    = range 3 slot=1
+%az   = after %z %iz %k
+%inc  = store %az (add (load %az) 1)
+%mark = store (index %y (add (mul %o 3) %k)) 1
+%done = end (end (after %inc %mark) %k) %o
+%test = assert (load (after %z %done)) 6

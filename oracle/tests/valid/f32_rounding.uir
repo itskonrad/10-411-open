@@ -1,0 +1,3 @@
+# Every f32 op rounds to the nearest f32: 16777216 + 1 rounds back to 16777216 (ties to even), twice.
+%x    = add (add 16777216.0 1.0) 1.0
+%test = assert %x 16777216.0

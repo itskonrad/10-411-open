@@ -1,0 +1,18 @@
+# expect: fail
+# The 2x2 gemm of tests/valid/gemm_2x2.uir with one wrong expected element, so the loops really run.
+%A    = buffer 4 slot=0 dtype=f32
+%B    = buffer 4 slot=1 dtype=f32
+%C    = buffer 4 slot=2 dtype=f32
+%Ar   = after %A (store %A [1 2 3 4])
+%Br   = after %B (store %B [5 6 7 8])
+%i    = range 2 slot=0
+%j    = range 2 slot=1
+%k    = range 2 slot=2
+%ci   = add (mul %i 2) %j
+%init = store (index %C %ci) 0.0
+%Ck   = after %C %init %k
+%a    = load (index %Ar (add (mul %i 2) %k))
+%b    = load (index %Br (add (mul %k 2) %j))
+%acc  = store (index %Ck %ci) (add (load (index %Ck %ci)) (mul %a %b))
+%done = end (end (end %acc %k) %j) %i
+%test = assert (after %C %done) [19 22 43 51]

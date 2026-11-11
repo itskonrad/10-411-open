@@ -1,0 +1,3 @@
+# expect: fail
+# NaN equals nothing, not even NaN.
+%test = assert nan nan

@@ -1,0 +1,5 @@
+# expect: parse: not defined
+# %y is used before its line.
+%x    = add %y 1
+%y    = 2
+%test = assert %x 3

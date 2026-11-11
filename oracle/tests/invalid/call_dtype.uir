@@ -1,0 +1,5 @@
+# expect: call: must be f32
+# An argument must have its PARAM's dtype.
+%x    = param [] slot=0 dtype=f32
+%r    = call (mul %x 2) (cast 3 dtype=i32)
+%test = assert %r 6

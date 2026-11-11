@@ -1,0 +1,4 @@
+# expect: dtype: after waits
+# AFTER waits for effects or ranges, not values.
+%buf  = buffer [] slot=0 dtype=i32
+%test = assert (load (after %buf 1)) 1

@@ -1,0 +1,7 @@
+# expect: bounds
+# i * 65536 * 65536 is 0 for every i (it wraps), but its bounds as written leave i32 and widen to the full range.
+%buf  = buffer 3 slot=0 dtype=i32
+%i    = range 3 slot=0
+%v    = index [7 8 9] (mul (mul %i 65536) 65536)
+%done = end (store (index %buf %i) %v) %i
+%test = assert (after %buf %done) [7 7 7]

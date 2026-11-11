@@ -1,0 +1,7 @@
+# expect: arg
+# Two different buffers with slot 0.
+%a    = buffer [] slot=0 dtype=i32
+%b    = buffer [] slot=0 dtype=f32
+%sa   = store %a 1
+%sb   = store %b 2
+%test = assert (after %a %sa %sb) 1

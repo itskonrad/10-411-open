@@ -1,0 +1,4 @@
+# expect: dtype: cannot be i32
+# A float literal cannot match an i32.
+%x    = add (cast 1 dtype=i32) 2.5
+%test = assert %x 3

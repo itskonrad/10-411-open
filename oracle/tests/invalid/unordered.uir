@@ -1,0 +1,6 @@
+# expect: order
+# The load does not wait for the store (no after): loads and stores must be fully ordered (spec week 2).
+%buf   = buffer [] slot=0 dtype=i32
+%write = store %buf 7
+%value = load %buf
+%test  = assert (add %value (load (after %buf %write))) 14

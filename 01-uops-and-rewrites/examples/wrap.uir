@@ -1,0 +1,4 @@
+# i32 arithmetic wraps around (two's complement).
+# 2147483647 is the largest i32; one more wraps to the smallest, -2147483648.
+%big  = add 2147483647 1
+%test = assert %big -2147483648

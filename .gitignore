@@ -1,0 +1,15 @@
+# Reference clone of tinygrad: clone it yourself (see README.md)
+tinygrad/
+
+# Python
+__pycache__/
+*.pyc
+
+# Build output from tools/check_snippets.py and the chapter runtimes
+.check-*/
+kernels/
+*.so
+*.o
+
+# Local planning notes
+PLAN.md

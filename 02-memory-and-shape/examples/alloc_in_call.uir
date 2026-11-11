@@ -1,0 +1,8 @@
+# ALLOC is call-scope storage: every call gets its own.
+# f(x) stores x into a scratch cell and returns it plus 1: f(4) + f(10) = 5 + 11 = 16.
+%x    = param [] slot=0 dtype=i32
+%tmp  = alloc [] slot=0 dtype=i32
+%put  = store %tmp %x
+%f    = add (load (after %tmp %put)) 1
+%sum  = add (call %f 4) (call %f 10)
+%test = assert %sum 16

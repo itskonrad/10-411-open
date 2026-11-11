@@ -1,0 +1,5 @@
+# expect: dtype
+# A literal on its own line is typed there: %a is i32, so it cannot meet an f32 without a cast.
+%a    = 3
+%x    = add %a (cast 1 dtype=f32)
+%test = assert %x 4

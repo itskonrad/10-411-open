@@ -1,0 +1,4 @@
+# Inline int literals next to an f32 are read as f32 (uir.md Literals): (2 + 0.5) * 2 = 5.0
+%h    = cast 2 dtype=f32
+%x    = mul (add %h 0.5) 2
+%test = assert %x 5

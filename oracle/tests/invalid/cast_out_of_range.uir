@@ -1,0 +1,3 @@
+# expect: undefined: cast
+# 3e9 does not fit in i32.
+%test = assert (cast 3e9 dtype=i32) 0

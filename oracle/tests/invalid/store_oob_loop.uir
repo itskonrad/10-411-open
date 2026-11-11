@@ -1,0 +1,6 @@
+# expect: bounds
+# The loop runs i over [0, 3] but the buffer has 3 elements.
+%buf  = buffer 3 slot=0 dtype=i32
+%i    = range 4 slot=0
+%done = end (store (index %buf %i) %i) %i
+%test = assert (after %buf %done) [0 1 2]

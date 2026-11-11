@@ -1,0 +1,6 @@
+# expect: range: does not use its range
+# The END's effect does not use its range.
+%buf  = buffer [] slot=0 dtype=i32
+%i    = range 3 slot=0
+%done = end (store %buf 1) %i
+%test = assert (after %buf %done) 1

@@ -1,0 +1,5 @@
+# expect: addrspace
+# An ALU op cannot use GLOBAL memory: load it first.
+%buf  = buffer [] slot=0 dtype=i32
+%x    = add %buf 1
+%test = assert %x 1

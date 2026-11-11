@@ -1,0 +1,5 @@
+# expect: shape
+# The stored value's shape must equal the target's: a rank-0 value into a rank-1 buffer.
+%buf  = buffer 3 slot=0 dtype=i32
+%put  = store %buf 1
+%test = assert (after %buf %put) [1 1 1]

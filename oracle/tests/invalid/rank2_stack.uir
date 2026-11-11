@@ -1,0 +1,4 @@
+# expect: rank
+# Rank-2 stacks arrive in week 5.
+%m    = [[1 2] [3 4]]
+%test = assert (index (index %m 0) 1) 2

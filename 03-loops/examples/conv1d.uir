@@ -1,0 +1,18 @@
+# A 1-D convolution with no padding: y[o] = sum over k of x[o + k] * w[k], for o = 0, 1, 2.
+# x = [1 2 3 4 5], w = [1 2 3]:
+# y = [1*1 + 2*2 + 3*3, 2*1 + 3*2 + 4*3, 3*1 + 4*2 + 5*3] = [14 20 26].
+# Bounds: o in [0, 2] and k in [0, 2], so o + k is in [0, 4]: inside x.
+%x    = buffer 5 slot=0 dtype=i32
+%w    = buffer 3 slot=1 dtype=i32
+%y    = buffer 3 slot=2 dtype=i32
+%sx   = store %x [1 2 3 4 5]
+%sw   = store %w [1 2 3]
+%o    = range 3 slot=0
+%k    = range 3 slot=1
+%init = store (index %y %o) 0
+%acc  = after %y %init %k
+%yo   = index %acc %o
+%prod = mul (load (index (after %x %sx) (add %o %k))) (load (index (after %w %sw) %k))
+%step = store %yo (add (load %yo) %prod)
+%done = end (end %step %k) %o
+%test = assert (after %y %done) [14 20 26]

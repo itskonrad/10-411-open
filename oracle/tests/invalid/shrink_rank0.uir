@@ -1,0 +1,4 @@
+# expect: rank
+# SHRINK takes rank-1 memory.
+%buf  = buffer [] slot=0 dtype=i32
+%test = assert (load (shrink %buf 0 1)) [0]

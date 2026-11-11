@@ -1,0 +1,6 @@
+# expect: call: needs 2 arguments
+# f uses slots 0 and 1, so a call passes exactly two arguments.
+%x    = param [] slot=0 dtype=i32
+%y    = param [] slot=1 dtype=i32
+%r    = call (add %x %y) 3
+%test = assert %r 3

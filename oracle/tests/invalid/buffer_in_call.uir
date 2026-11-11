@@ -1,0 +1,6 @@
+# expect: call: BUFFER
+# BUFFER is never in a call (spec week 2).
+%x    = param [] slot=0 dtype=i32
+%buf  = buffer [] slot=0 dtype=i32
+%f    = add (load (after %buf (store %buf %x))) 1
+%test = assert (call %f 2) 3

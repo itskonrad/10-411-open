@@ -1,0 +1,5 @@
+# expect: bounds
+# A window of 2 at offset 3 reaches element 4 of a 4-element buffer.
+%buf  = buffer 4 slot=0 dtype=i32
+%put  = store (shrink %buf 3 2) [1 2]
+%test = assert (after %buf %put) [0 0 0 1]

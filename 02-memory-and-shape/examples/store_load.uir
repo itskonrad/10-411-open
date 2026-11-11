@@ -1,0 +1,7 @@
+# The draft course page's week 2 example, with the spec's `buffer` (the page writes `extern`).
+# Store 7 into a rank-0 buffer; the load happens after the store, so it reads 7.
+%buf   = buffer [] slot=0 dtype=i32
+%write = store %buf 7
+%ready = after %buf %write
+%value = load %ready
+%test  = assert %value 7
