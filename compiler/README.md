@@ -9,5 +9,5 @@ Write your compiler here, in any language. It needs one command that takes a `.u
 Check it against the oracle with:
 
 ```sh
-python3 -I tools/check_compiler.py --week 1 -- <your command>
+python3 -I tools/check_compiler.py --chapter 1 -- <your command>
 ```

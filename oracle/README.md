@@ -1,6 +1,6 @@
-# UIR oracle (weeks 1–3)
+# UIR oracle (chapters 1–3)
 
-A reference interpreter for UIR programs of weeks 1–3. It decides whether a test program is valid and whether its assert holds. It is slow and simple on purpose: it is a reference, not a compiler. It does no rewriting, no rendering and no optimisation, and does not compute `cost`.
+A reference interpreter for UIR programs of chapters 1–3. It decides whether a test program is valid and whether its assert holds. It is slow and simple on purpose: it is a reference, not a compiler. It does no rewriting, no rendering and no optimisation, and does not compute `cost`.
 
 ## Running it
 
@@ -33,7 +33,7 @@ After the last line come the whole-program checks, on the graph the root reaches
 - `AFTER(value, deps...)` evaluates its deps, then returns the value.
 - Memory is a Python list per BUFFER or ALLOC node. It is created when the node is first evaluated in a frame. Each CALL gets its own frame, and so its own ALLOCs. An address (`INDEX` or `SHRINK` of memory) is a view into that list.
 
-In weeks 1 and 2 there are no loops, and the ordering check makes sure every load/store pair on one buffer is ordered by the graph. So any topological order gives the same result. In week 3, the result is the one defined by the rule above.
+In chapters 1 and 2 there are no loops, and the ordering check makes sure every load/store pair on one buffer is ordered by the graph. So any topological order gives the same result. In chapter 3, the result is the one defined by the rule above.
 
 ## Decisions not in uir.md
 
@@ -42,7 +42,7 @@ These are choices that uir.md, chapter 1 and the research notes leave open. Chap
 - **Inline literals.** Only literals written inline (a literal token, or `[...]`) take the dtype they must match. A `%name` bound to a literal is already typed. An inline stack converted to `f32` converts all its elements.
 - **INDEX** takes exactly one index, because shapes are at most rank 1. The index is a rank-0 `i32` ALU value. On memory, INDEX gives a rank-0 address. On a value (a stack, or a rank-1 PARAM or LOAD), it gives the element.
 - **The all-sources-exact bounds row** applies to ALU ops only. If the op is undefined on those values (`div 1 0`), the bounds are the dtype's full range, and running the program reports the error.
-- **BUFFER and ALLOC are both GLOBAL** and start undefined. Weeks 1–3 have no way to load input data, so tests write their inputs with STOREs first. Reading an element that was never stored is `undefined`.
+- **BUFFER and ALLOC are both GLOBAL** and start undefined. Chapters 1–3 have no way to load input data, so tests write their inputs with STOREs first. Reading an element that was never stored is `undefined`.
 - **SHRINK(buffer, offset, size)** takes rank-1 memory only. The offset is a rank-0 `i32` and may be symbolic. The size is a constant ≥ 1. The window `[offset.vmin, offset.vmax + size − 1]` must lie in `[0, n − 1]`.
 - **LOAD of a rank-1 address** (a whole buffer or a SHRINK) gives a rank-1 ALU value. It can be indexed, stored or asserted, but no ALU op can use it.
 - **STORE.** The value is an ALU value (not memory, not an effect), and its shape equals the target's. A STORE has dtype `void` and shape `()`.
@@ -57,4 +57,4 @@ These are choices that uir.md, chapter 1 and the research notes leave open. Chap
 - **CALL.** A call passes exactly (highest PARAM slot + 1) arguments, so an unused slot below the highest still takes one. Every argument is an ALU value; memory and effects cannot be passed. The body is an ALU value with no open ranges, and it may contain its own loops and ALLOCs. Two different PARAMs with one slot in one body are an error. A CALL whose arguments use a range is evaluated once per iteration.
 - **ASSERT** reads memory contents when either side is memory, and every element it reads must be defined.
 - **Undefined behaviour** (uir.md, Arithmetic) is reported as `ERROR … undefined` when evaluation reaches it. This covers both branches of a WHERE, because both are evaluated. Constants alone never make a program invalid.
-- **Tokens.** Comments, `%name =`, `key=value`, nested `(op ...)` and `[stacks]` follow tinygrad's `uir.py`. The oracle rejects scoped blocks `{}` (week 6), backtick objects and `invalid`. Every key an op takes is required. Unknown keys and repeated keys are errors.
+- **Tokens.** Comments, `%name =`, `key=value`, nested `(op ...)` and `[stacks]` follow tinygrad's `uir.py`. The oracle rejects scoped blocks `{}` (chapter 6), backtick objects and `invalid`. Every key an op takes is required. Unknown keys and repeated keys are errors.

@@ -1,6 +1,6 @@
 """Check your compiler against the oracle.
 
-Usage: python3 -I tools/check_compiler.py [--week N] [FILE.uir ...] -- COMMAND [ARG ...]
+Usage: python3 -I tools/check_compiler.py [--chapter N] [FILE.uir ...] -- COMMAND [ARG ...]
 
 Runs `COMMAND ARG ... FILE.uir` for every test program and compares its verdict with the
 oracle's. Your compiler prints one line per file, starting with its verdict, as the oracle does:
@@ -34,8 +34,8 @@ def verdict(command: list[str], path: Path) -> str:
     return f"no verdict (exit {result.returncode}, output {result.stdout.strip()[:60]!r})"
 
 
-def default_files(week: int) -> list[Path]:
-    examples = [p for p in sorted(ROOT.glob("[0-9][0-9]-*/examples/*.uir")) if int(p.parts[-3][:2]) <= week]
+def default_files(chapter: int) -> list[Path]:
+    examples = [p for p in sorted(ROOT.glob("[0-9][0-9]-*/examples/*.uir")) if int(p.parts[-3][:2]) <= chapter]
     return examples + sorted((ROOT / "tests").rglob("*.uir"))
 
 
@@ -44,10 +44,10 @@ def main(argv: list[str]) -> int:
         sys.exit(__doc__)
     split = argv.index("--")
     options, command = argv[:split], argv[split + 1:]
-    week = 99
-    if options[:1] == ["--week"]:
-        week, options = int(options[1]), options[2:]
-    files = [Path(f).resolve() for f in options] or default_files(week)
+    chapter = 99
+    if options[:1] == ["--chapter"]:
+        chapter, options = int(options[1]), options[2:]
+    files = [Path(f).resolve() for f in options] or default_files(chapter)
 
     mismatches = 0
     for path in files:

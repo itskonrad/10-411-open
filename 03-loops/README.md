@@ -1,4 +1,4 @@
-# Week 3: Loops
+# Chapter 3: Loops
 
 > **`loops` · `gemms` · `convs`**
 >
@@ -20,7 +20,7 @@
 >
 > — the syllabus, week 3
 
-**Builds on:** [Week 2](../02-memory-and-shape/README.md). **By the end you can:** write loops in UIR, place every node inside the loops it belongs to, and render nested C loops, including a matrix multiply and a convolution.
+**Builds on:** [Chapter 2](../02-memory-and-shape/README.md). **By the end you can:** write loops in UIR, place every node inside the loops it belongs to, and render nested C loops, including a matrix multiply and a convolution.
 
 ## Contents
 
@@ -91,7 +91,7 @@ In the example, `ranges(%write)` is `{%i}`, `ranges(%done)` is empty, and `ended
 - **Nothing escapes a loop.** The root's `ranges` is empty, and a value computed inside a loop cannot be used after the loop's END: with `%v = load (index %buf %i)`, using `%v` after `%done` is rejected, because `%v` has a different value on each iteration.
 - **Loop bounds are constants** of at least 1, so every loop's trip count is known before it runs.
 
-**Bounds make indexing safe.** A RANGE's bounds are `[0, end − 1]` ([uir.md](../uir.md#bounds)), so the checks from weeks 1 and 2 extend to loops with no new machinery. In [examples/nested.uir](examples/nested.uir), `i` is in `[0, 1]` and `j` in `[0, 2]`, so `i*3 + j` is in `[0, 5]`, inside a buffer of 6.
+**Bounds make indexing safe.** A RANGE's bounds are `[0, end − 1]` ([uir.md](../uir.md#bounds)), so the checks from chapters 1 and 2 extend to loops with no new machinery. In [examples/nested.uir](examples/nested.uir), `i` is in `[0, 1]` and `j` in `[0, 2]`, so `i*3 + j` is in `[0, 5]`, inside a buffer of 6.
 
 ### Lesson 2: ordering the ranges
 
@@ -171,9 +171,9 @@ def render(order: list, ctype) -> str:
 
 </details>
 
-The syllabus says: "If you still have an interpreter at this point, it's time to write a renderer." From this week, the renderer is your compiler; keep the interpreter only as the other half of your differential tests.
+The syllabus says: "If you still have an interpreter at this point, it's time to write a renderer." From this chapter on, the renderer is your compiler; keep the interpreter only as the other half of your differential tests.
 
-**Inlining loops.** Week 2's inliner gives each inlined ALLOC a fresh slot. Loops need the same: two calls of a body that contains a loop share one RANGE after hash-consing, so the inliner gives each inlined RANGE a fresh slot too. For the same reason, a RANGE may not be used both inside a call body and outside it.
+**Inlining loops.** Chapter 2's inliner gives each inlined ALLOC a fresh slot. Loops need the same: two calls of a body that contains a loop share one RANGE after hash-consing, so the inliner gives each inlined RANGE a fresh slot too. For the same reason, a RANGE may not be used both inside a call body and outside it.
 
 > **Interpretation.** The syllabus expects "a rewrite engine, in order to order the ranges properly". You do not need one: `nest` computes the placement directly. tinygrad uses a rewrite: the first loop nested in `j` takes `j` as a dependency of its bound (`range (after 4 %j)`), and each later sibling loop's bound depends on the earlier sibling's END. Because a RANGE's `ranges` include its bound's, every node inside an inner loop then also depends on the outer loops, and a sort by loop depth places each node (`tinygrad/codegen/late/linearizer.py`).
 
@@ -246,11 +246,11 @@ int main(void) {
 
 Notice what placement did by itself: `i*2` is computed once per `i`, `i*2 + j` once per `(i, j)`, and the init runs before the `k` loop. Each node sits in the innermost loop of its `ranges`.
 
-**Loop order is yours to choose.** Loops nest the way their ENDs nest, so the program decides the order. In `i, j, k` order the inner loop reads `B[k][j]` `n` elements apart. In `i, k, j` order it reads `B[k][j]` and writes `C[i][j]` at consecutive addresses, which uses the cache far better; the initial stores then need a loop of their own before `k`, or they would reset `C` on every `k`. The result is identical, because each `C[i][j]` still adds its terms in the same order of `k`. Choosing orders like this automatically is the work of weeks 6–8.
+**Loop order is yours to choose.** Loops nest the way their ENDs nest, so the program decides the order. In `i, j, k` order the inner loop reads `B[k][j]` `n` elements apart. In `i, k, j` order it reads `B[k][j]` and writes `C[i][j]` at consecutive addresses, which uses the cache far better; the initial stores then need a loop of their own before `k`, or they would reset `C` on every `k`. The result is identical, because each `C[i][j]` still adds its terms in the same order of `k`. Choosing orders like this automatically is the work of chapters 6–8.
 
 **A convolution** is the same shape of program with different index arithmetic: `y[o] = Σ_k x[o + k] · w[k]` ([examples/conv1d.uir](examples/conv1d.uir)). Bounds keep it honest: with `o` in `[0, 2]` and `k` in `[0, 2]`, `o + k` is in `[0, 4]`, inside `x`. A 2-D convolution adds two more loops and the index `(oy + ky) * W + (ox + kx)`; its reduction to a matrix multiply is a classic ([Chellapilla et al. 2006](#sources)).
 
-**What this does not do yet.** These loops are correct but slow: each `C[i][j]` is loaded and stored on every step of `k`, and nothing is reused from cache on purpose. Week 4 generates such loops from shapes (`REDUCE`), and weeks 6–8 make them fast ([Goto & van de Geijn 2008](#sources)).
+**What this does not do yet.** These loops are correct but slow: each `C[i][j]` is loaded and stored on every step of `k`, and nothing is reused from cache on purpose. Chapter 4 generates such loops from shapes (`REDUCE`), and chapters 6–8 make them fast ([Goto & van de Geijn 2008](#sources)).
 
 ## Ops introduced
 
@@ -259,7 +259,7 @@ Notice what placement did by itself: `i*2` is computed once per `i`, `i*2 + j` o
 | `RANGE` | end (a constant ≥ 1) | `slot` | `()` | `i32` | Loop variable: `0, 1, …, end − 1`; bounds `[0, end − 1]` |
 | `END` | effect, range | none | `()` | `void` | Runs the effect once per value of the range |
 
-`AFTER` (week 2) may now also wait for a RANGE: `after %acc %init %i` is `%acc` inside loop `i`. Rules your compiler checks, in addition to weeks 1–2: the loop rules in [Lesson 1](#lesson-1-loops-as-values), and no RANGE used both inside a CALL body and outside it. A CALL whose arguments use a loop runs once per iteration, like any other node.
+`AFTER` (chapter 2) may now also wait for a RANGE: `after %acc %init %i` is `%acc` inside loop `i`. Rules your compiler checks, in addition to chapters 1–2: the loop rules in [Lesson 1](#lesson-1-loops-as-values), and no RANGE used both inside a CALL body and outside it. A CALL whose arguments use a loop runs once per iteration, like any other node.
 
 ## Properties introduced
 
@@ -272,14 +272,14 @@ Notice what placement did by itself: `i*2` is computed once per `i`, `i*2 + j` o
 
 ## Assignment
 
-Due Wednesday of week 4, before the 10 AM class. Your ten tests, in UIR, are due the Monday before.
+Start by writing ten tests of your own in UIR (the syllabus asks for ten each week), and check them with the [oracle](../oracle/README.md).
 
 1. **Check** the new rules above.
 2. **Compute** `ranges` and `ended_ranges` for every node.
 3. **Order** the nodes so that every node is inside the innermost loop of its `ranges` and the loops nest as their ENDs do (Lesson 2).
-4. **Render** loops as C `for` loops, compile, run, and check the assert, for every program from weeks 1–3.
+4. **Render** loops as C `for` loops, compile, run, and check the assert, for every program from chapters 1–3.
 
-Your inliner now gives fresh slots to both ALLOCs and RANGEs. Keep the interpreter for differential tests; the renderer is the compiler. Restrictions this week: memory and values are at most rank 1; ALU ops take rank-0 sources; loop bounds are constants.
+Your inliner now gives fresh slots to both ALLOCs and RANGEs. Keep the interpreter for differential tests; the renderer is the compiler. Restrictions this chapter: memory and values are at most rank 1; ALU ops take rank-0 sources; loop bounds are constants.
 
 ## Example programs
 

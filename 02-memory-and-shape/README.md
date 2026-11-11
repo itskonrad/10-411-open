@@ -1,4 +1,4 @@
-# Week 2: Memory & Shape
+# Chapter 2: Memory & Shape
 
 > Students write a renderer and a runtime capable of compiling and executing C programs.
 >
@@ -27,7 +27,7 @@
 >
 > — the syllabus, week 2
 
-**Builds on:** [Week 1](../01-uops-and-rewrites/README.md). **By the end you can:** compile a UIR program with memory to a C function, load it into your compiler's process, run it, and check its result.
+**Builds on:** [Chapter 1](../01-uops-and-rewrites/README.md). **By the end you can:** compile a UIR program with memory to a C function, load it into your compiler's process, run it, and check its result.
 
 ## Contents
 
@@ -47,7 +47,7 @@
 
 ### Lesson 1: toposort and rendering, C refresher
 
-**Memory enters the graph.** Week 1's programs were pure values. This week adds memory: a `BUFFER` is an array that outlives the program, `STORE` writes it, `LOAD` reads it, and `AFTER` says what must happen first. The smallest example, from the draft course page:
+**Memory enters the graph.** Chapter 1's programs were pure values. This chapter adds memory: a `BUFFER` is an array that outlives the program, `STORE` writes it, `LOAD` reads it, and `AFTER` says what must happen first. The smallest example, from the draft course page:
 
 ```text
 %buf   = buffer [] slot=0 dtype=i32
@@ -107,9 +107,9 @@ void kernel(int32_t *buf0) {
 }
 ```
 
-The syllabus calls this "loopless C functions that act on memory and immediates". Loops arrive next week.
+The syllabus calls this "loopless C functions that act on memory and immediates". Loops arrive in chapter 3.
 
-**C refresher: exact translations.** The C you emit must compute exactly what your week-1 interpreter computes ([uir.md](../uir.md#arithmetic)). Most ops map directly; these need care:
+**C refresher: exact translations.** The C you emit must compute exactly what your chapter-1 interpreter computes ([uir.md](../uir.md#arithmetic)). Most ops map directly; these need care:
 
 | UIR | C |
 |-----|---|
@@ -199,11 +199,11 @@ Calling the result needs memory for each BUFFER, sized from its shape and dtype.
 
 **Interpreting memory.** Rewriting alone cannot run a `STORE`. The simplest interpreter walks the graph in topological order with one array per BUFFER or ALLOC: `STORE` writes the array, `LOAD` reads it, `AFTER` passes its first source through, and each inlined call gets fresh ALLOCs. Reading an element no `STORE` wrote is an error. Because loads and stores are fully ordered (Lesson 3), any topological order gives the same answer. The [oracle](../oracle/README.md) works this way.
 
-**Two implementations, one answer.** Keep your week-1 interpreter, extended to memory. Every test can now run twice: interpreted and compiled. When they disagree, one of them has a bug, and the program that shows it is a new test. This is *differential testing*, and it is the cheapest way to find semantic bugs in the renderer.
+**Two implementations, one answer.** Keep your chapter-1 interpreter, extended to memory. Every test can now run twice: interpreted and compiled. When they disagree, one of them has a bug, and the program that shows it is a new test. This is *differential testing*, and it is the cheapest way to find semantic bugs in the renderer.
 
 ### Lesson 3: type systems for shape, dtype, and addrspace
 
-**A type system rejects programs before they run.** Your week-1 checks were already one: rules over `dtype` and `shape` that every node must satisfy. This week adds `addrspace`, extends shape and dtype to memory, and adds two analyses over memory.
+**A type system rejects programs before they run.** Your chapter-1 checks were already one: rules over `dtype` and `shape` that every node must satisfy. This chapter adds `addrspace`, extends shape and dtype to memory, and adds two analyses over memory.
 
 **Address spaces.** Every node is either memory or a value:
 
@@ -257,13 +257,13 @@ def check_ordered(acc: frozenset) -> None:  # the LOADs and STOREs of one buffer
                 raise TypeError(f"{a.op} and {b.op} of one buffer are not ordered: use AFTER")
 ```
 
-This rule is what makes rendering simple. Any topological order keeps every dependency, and the rule turns every order that matters into a dependency, so *every* topological order gives the same result. Your interpreter and your C agree without either needing to know about time. (This holds for programs without loops; week 3 adds one more rule, [when a node inside a loop runs](../uir.md#evaluation).) A program that loads `%buf` without waiting for the store is rejected; see [the oracle's test](../oracle/tests/invalid/unordered.uir).
+This rule is what makes rendering simple. Any topological order keeps every dependency, and the rule turns every order that matters into a dependency, so *every* topological order gives the same result. Your interpreter and your C agree without either needing to know about time. (This holds for programs without loops; chapter 3 adds one more rule, [when a node inside a loop runs](../uir.md#evaluation).) A program that loads `%buf` without waiting for the store is rejected; see [the oracle's test](../oracle/tests/invalid/unordered.uir).
 
 The check is deliberately coarse: it treats two accesses to *different* elements of one buffer as a pair too. That rejects some programs that would be fine, but it needs no reasoning about indices. (Storing each node's full `reach` set is quadratic in memory; fine for tests, slow for big graphs.)
 
 > **Interpretation.** Read literally, "fully ordered" could mean one total order over all memory accesses. This chapter orders only the pairs whose order can change a result: two accesses to one buffer, at least one a STORE. Two loads, or accesses to different buffers, may stay unordered.
 
-**Bounds checks.** "Loads and stores are bounds checked to never be out of range." With [uir.md's bounds rules](../uir.md#bounds), an `INDEX` into memory of length `n` must have bounds inside `[0, n − 1]`, and a `SHRINK` window must have `offset.vmin ≥ 0` and `offset.vmax + size ≤ n`. As in week 1, the check runs on the program as written and must succeed from bounds alone. A symbolic offset is fine when its bounds prove the window fits: `shrink %buf (mod %v 3) 2`, where `%v` is any `i32` (a loaded value, say), has offset bounds `[0, 2]`, and `2 + 2 ≤ 4` for a buffer of 4.
+**Bounds checks.** "Loads and stores are bounds checked to never be out of range." With [uir.md's bounds rules](../uir.md#bounds), an `INDEX` into memory of length `n` must have bounds inside `[0, n − 1]`, and a `SHRINK` window must have `offset.vmin ≥ 0` and `offset.vmax + size ≤ n`. As in chapter 1, the check runs on the program as written and must succeed from bounds alone. A symbolic offset is fine when its bounds prove the window fits: `shrink %buf (mod %v 3) 2`, where `%v` is any `i32` (a loaded value, say), has offset bounds `[0, 2]`, and `2 + 2 ≤ 4` for a buffer of 4.
 
 ## Ops introduced
 
@@ -276,7 +276,7 @@ The check is deliberately coarse: it treats two accesses to *different* elements
 | `STORE` | address, value | none | `()` | `void` | `ALU` | Write memory (an effect) |
 | `AFTER` | value, effects… | none | value's | value's | value's | The value, used only after the effects |
 
-`INDEX` (week 1) now also applies to memory: `index %buf %i` is the address of element `i`. Rules your compiler checks, in addition to week 1's:
+`INDEX` (chapter 1) now also applies to memory: `index %buf %i` is the address of element `i`. Rules your compiler checks, in addition to chapter 1's:
 
 - **Address spaces** as in the table in Lesson 3: ALU ops take `ALU` sources; `LOAD` and `STORE` targets are `GLOBAL`.
 - **STORE matches its target**: the value is an `ALU` value with the target's shape and dtype.
@@ -300,16 +300,16 @@ The check is deliberately coarse: it treats two accesses to *different* elements
 
 ## Assignment
 
-Due Wednesday of week 3, before the 10 AM class. Your ten tests, in UIR, are due the Monday before.
+Start by writing ten tests of your own in UIR (the syllabus asks for ten each week), and check them with the [oracle](../oracle/README.md).
 
 1. **Check** the new rules above.
-2. **Render** every valid program from weeks 1 and 2 to one C function: buffers become pointer parameters in increasing slot order, ALLOCs local arrays, the ASSERT a return value.
+2. **Render** every valid program from chapters 1 and 2 to one C function: buffers become pointer parameters in increasing slot order, ALLOCs local arrays, the ASSERT a return value.
 3. **Run** it: compile with `cc -std=c11 -O2 -fwrapv -ffp-contract=off -shared -fPIC`, load it, allocate each BUFFER from its shape and dtype (zeroed is fine; tests store before they load), call it, and report pass or fail.
 4. **Keep your interpreter** working on memory too, and run every test both ways. They must agree.
 
-Render the program after inlining calls (with fresh ALLOC slots), but without constant folding or symbolic rules, so the C really computes every op; the interpreter is the folding side of the comparison. Once both agree, you may fold before rendering in later weeks. The renderer must handle every week-1 op, using the helpers from Lesson 1.
+Render the program after inlining calls (with fresh ALLOC slots), but without constant folding or symbolic rules, so the C really computes every op; the interpreter is the folding side of the comparison. Once both agree, you may fold before rendering in later chapters. The renderer must handle every chapter-1 op, using the helpers from Lesson 1.
 
-Restrictions this week: memory and values are at most rank 1; ALU ops take rank-0 sources; there are no loops, so rank-1 stores render one statement per element.
+Restrictions this chapter: memory and values are at most rank 1; ALU ops take rank-0 sources; there are no loops, so rank-1 stores render one statement per element.
 
 ## Example programs
 
@@ -328,11 +328,11 @@ All in [examples/](examples/). Each file's comments show the hand calculation. T
 
 > **Spec note.** The draft course page puts "render and execute C programs" in week 3; the syllabus puts the renderer and runtime in week 2. This chapter follows the syllabus.
 
-> **Interpretation.** "SHRINK(offset, shape)" is written in UIR as `shrink memory offset size`, following tinygrad (`tinygrad/uop/ops.py`). Until week 5, SHRINK applies only to rank-1 memory (tinygrad's program spec allows it only on a buffer or an AFTER), so its offset and size are single numbers; the size is a constant ≥ 1.
+> **Interpretation.** "SHRINK(offset, shape)" is written in UIR as `shrink memory offset size`, following tinygrad (`tinygrad/uop/ops.py`). Until chapter 5, SHRINK applies only to rank-1 memory (tinygrad's program spec allows it only on a buffer or an AFTER), so its offset and size are single numbers; the size is a constant ≥ 1.
 
 > **Interpretation.** A `STORE` has dtype `void` and shape `()`: it is an effect, not a value. tinygrad gives STORE its target's shape; nothing in this course uses a STORE's shape.
 
-> **Interpretation.** `AFTER(buf, <store>)` takes one value and any number of effects, as tinygrad's AFTER does, so one access can wait for several stores. Its first source may also be an `ALU` value or an effect, as tinygrad's AFTER spec allows (`tinygrad/uop/spec.py`). Week 3 also allows a RANGE among the effects.
+> **Interpretation.** `AFTER(buf, <store>)` takes one value and any number of effects, as tinygrad's AFTER does, so one access can wait for several stores. Its first source may also be an `ALU` value or an effect, as tinygrad's AFTER spec allows (`tinygrad/uop/spec.py`). Chapter 3 also allows a RANGE among the effects.
 
 > **Interpretation.** The rules above that the syllabus does not state (rank-1 loads, shared slots, defined memory for ASSERT) come from the oracle; see [oracle/README.md](../oracle/README.md#decisions-not-in-uirmd) for its reasons.
 

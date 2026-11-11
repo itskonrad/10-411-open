@@ -1,6 +1,6 @@
 # 10-411 Open: Compilers for Machine Learning
 
-My unofficial, self-study version of CMU's 10-411 ([course page](https://10-411.com/)), built from its public syllabus: [geohot's gist](https://gist.github.com/geohot/4768597d9dc536446ee2d5de1f29e89d) (copy in [syllabus/](syllabus/syllabus.md)). The course materials are not public, so these chapters are my own, following the syllabus week by week, with GPU work targeting **AMD GPUs (ROCm/HIP)**.
+My unofficial, self-study version of CMU's 10-411 ([course page](https://10-411.com/)), built from its public syllabus: [geohot's gist](https://gist.github.com/geohot/4768597d9dc536446ee2d5de1f29e89d) (copy in [syllabus/](syllabus/syllabus.md)). The course materials are not public, so these chapters are my own, one chapter per syllabus week, to work through at your own pace, with GPU work targeting **AMD GPUs (ROCm/HIP)**.
 
 ## Contents
 
@@ -28,19 +28,19 @@ My unofficial, self-study version of CMU's 10-411 ([course page](https://10-411.
 6. [Autodiff & speed](06-autodiff-and-speed/README.md)
 7. [GPUs](07-gpus/README.md)
 8. [Memory hierarchies](08-memory-hierarchies/README.md)
-9. [Real models](09-10-real-models/README.md), weeks 9–10
-10. [Student projects](11-student-projects/README.md), weeks 11+
+9. [Real models](09-real-models/README.md) (syllabus weeks 9–10)
+10. [Student projects](10-student-projects/README.md) (syllabus weeks 11+)
 
 Reference: [the UIR format and conventions](uir.md).
 
 ## Doing the course
 
 1. Fork this repo and write your compiler in [compiler/](compiler/README.md), in any language.
-2. Each week, read the chapter, write your own tests in [tests/](tests/README.md), and check them with the [oracle](oracle/README.md): `python3 -I oracle/uir.py tests/week1/*.uir`.
+2. For each chapter, read it, write your own tests in [tests/](tests/README.md), and check them with the [oracle](oracle/README.md): `python3 -I oracle/uir.py tests/chapter1/*.uir`.
 3. Extend your compiler until it agrees with the oracle on every example and test so far:
 
    ```sh
-   python3 -I tools/check_compiler.py --week 1 -- <your compiler command>
+   python3 -I tools/check_compiler.py --chapter 1 -- <your compiler command>
    ```
 
 Where the syllabus is silent, the chapters follow [tinygrad](https://github.com/tinygrad/tinygrad) and say so. To read the tinygrad files they cite:
@@ -54,7 +54,7 @@ git -C tinygrad checkout 07821caeade16a3e954f28af9263666ab0c1bd53
 
 | Status | Chapters |
 |--------|----------|
-| Done | 0 Prerequisites, 1 UOps & rewrites, 2 Memory & shape, 3 Loops, plus the UIR reference and the oracle for weeks 1–3 |
+| Done | 0 Prerequisites, 1 UOps & rewrites, 2 Memory & shape, 3 Loops, plus the UIR reference and the oracle for chapters 1–3 |
 | To do | 4 Rangeify, 5 Movement ops, 6 Autodiff & speed, 7 GPUs, 8 Memory hierarchies, 9 Real models, 10 Student projects |
 
 The syllabus is still a draft. This page and the chapters will be updated as it gets refined.

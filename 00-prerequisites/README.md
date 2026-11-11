@@ -4,9 +4,9 @@
 >
 > — the syllabus
 
-This chapter is not part of the syllabus. It collects what the syllabus assumes you already know, so you can check yourself before week 1 and know where to read up. Nothing here is graded.
+This chapter is not part of the syllabus. It collects what the syllabus assumes you already know, so you can check yourself before chapter 1 and know where to read up. Nothing here is graded.
 
-**By the end you can:** tell whether you are ready for week 1, and fill any gaps with the readings in [Where to learn more](#where-to-learn-more).
+**By the end you can:** tell whether you are ready for chapter 1, and fill any gaps with the readings in [Where to learn more](#where-to-learn-more).
 
 ## Contents
 
@@ -32,7 +32,7 @@ This chapter is not part of the syllabus. It collects what the syllabus assumes 
 - build text and run a C compiler from your program;
 - load a shared library and call a function in it (a foreign function interface).
 
-**Working on a long project.** The syllabus grades every week's compiler against all student and teacher tests, so set this up before week 1: version control with a commit after each working step; one command that runs every `.uir` file from every week and reports failures; and the habit of deleting code that later weeks make unnecessary. Style is graded too ("can it be simpler?"), and complexity added early costs you every week after.
+**Working on a long project.** Every chapter's compiler must still pass every earlier chapter's tests, so set this up before chapter 1: version control with a commit after each working step; one command that runs every `.uir` file from every week and reports failures; and the habit of deleting code that later chapters make unnecessary. Style is graded too ("can it be simpler?"), and complexity added early costs you every week after.
 
 
 ## Lessons
@@ -41,7 +41,7 @@ This chapter is not part of the syllabus. It collects what the syllabus assumes 
 
 **A translator with a middle.** A compiler turns a program in one language into an equivalent program in another, usually faster or closer to the hardware. It works in three stages:
 
-1. **Front end:** read the source text (parse it) and check it. Week 1 starts with a parser for UIR: split each line into tokens (names, numbers, brackets), then parse with one recursive function per construct; on `(` or `[`, call yourself until the matching `)` or `]`. If you have never written a recursive-descent parser, write one for arithmetic expressions first ([Aho et al. 2006](#sources), ch. 2).
+1. **Front end:** read the source text (parse it) and check it. Chapter 1 starts with a parser for UIR: split each line into tokens (names, numbers, brackets), then parse with one recursive function per construct; on `(` or `[`, call yourself until the matching `)` or `]`. If you have never written a recursive-descent parser, write one for arithmetic expressions first ([Aho et al. 2006](#sources), ch. 2).
 2. **Middle:** turn it into an *intermediate representation* and improve it with a series of *passes*.
 3. **Back end:** print the result in the target language (*code generation*).
 
@@ -72,7 +72,7 @@ tree (an abstract syntax tree)     linear (three-address code, SSA)     graph (t
 - **Linear code** is a list of instructions, each computing one value from named inputs. In *static single assignment* form (SSA) every name is assigned exactly once, so each name *is* a value, and data flow is just name lookup (the standard construction is [Cytron et al. 1991](#sources)). LLVM's IR is SSA ([Lattner & Adve 2004](#sources)). Where control flow merges, SSA needs φ-nodes to pick a value; this course's IR has no branches, so you never need them.
 - **A graph** keeps only the data flow: nodes are operations, edges point at inputs, and there is no order beyond what the edges force. This is close to the "sea of nodes" used in Java's HotSpot compiler ([Click & Paleczny 1995](#sources)), and it is what UOps are. Written as text, a graph looks like SSA; the difference is that the order of the lines means nothing, only the `%` references do. Any order that puts definitions before uses is the same graph.
 
-Moving between them is mechanical. Lowering a tree to SSA, giving equal subtrees one name, is a few lines, and the result is already a graph (giving equal values one name is *value numbering*; week 1's hash-consing does the same for UOps):
+Moving between them is mechanical. Lowering a tree to SSA, giving equal subtrees one name, is a few lines, and the result is already a graph (giving equal values one name is *value numbering*; chapter 1's hash-consing does the same for UOps):
 
 ```python
 def to_ssa(tree, code: list, names: dict) -> str:
@@ -94,7 +94,7 @@ assert code == ["t0 = add a b", "t1 = mul t0 t0"]
 
 **Passes.** A pass is one step over the IR. An *analysis* computes facts without changing anything (the type of every value, the range of an index, which loads read which buffer). A *transformation* rewrites the program into an equivalent one (fold `2 + 3` into `5`, move a computation out of a loop). Compilers run many small passes, often repeating them until nothing changes (a *fixed point*). The rule every transformation must keep: **the program's meaning does not change**, including at the numeric edges of Lesson 2.
 
-**Levels and lowering.** An ML compiler starts from a high-level program ("multiply these two `256 × 256` tensors") and ends at C or GPU code with loops and index arithmetic. Each step down is *lowering*: replacing an operation by a more detailed equivalent, which loses structure (it is no longer obvious that this is a matrix multiply) and gains control (now the compiler can choose loop order). Many compilers use a different IR at each level. This course uses one, the UOp graph, at every level: week 4–5 programs have shapes and tensor operations, rangeify lowers them to the loops and memory of weeks 2–3, and the renderer prints those as C or HIP.
+**Levels and lowering.** An ML compiler starts from a high-level program ("multiply these two `256 × 256` tensors") and ends at C or GPU code with loops and index arithmetic. Each step down is *lowering*: replacing an operation by a more detailed equivalent, which loses structure (it is no longer obvious that this is a matrix multiply) and gains control (now the compiler can choose loop order). Many compilers use a different IR at each level. This course uses one, the UOp graph, at every level: chapter 4–5 programs have shapes and tensor operations, rangeify lowers them to the loops and memory of chapters 2–3, and the renderer prints those as C or HIP.
 
 **What an ML compiler decides.** A model is a graph of tensor operations. Running it fast means deciding:
 
@@ -104,7 +104,7 @@ assert code == ["t0 = add a b", "t1 = mul t0 t0"]
 
 Halide made the split between *what* to compute (the algorithm) and *how* (the schedule) explicit ([Ragan-Kelley et al. 2013](#sources)); TVM applies it to deep learning ([Chen et al. 2018](#sources)); tinygrad, which this course follows, does all three with rewrites on one graph IR.
 
-**Interpreters and compilers.** An interpreter walks the program and computes values directly. A compiler translates the program into another language, here C and later HIP, and lets another compiler produce machine code. Both start from the same graph; the difference is whether the walk produces values or text. A *JIT* (just-in-time) compiler compiles while the program runs, which is what your runtime does from week 2. Your compiler will do both: it folds what it can at compile time, and generates code for the rest.
+**Interpreters and compilers.** An interpreter walks the program and computes values directly. A compiler translates the program into another language, here C and later HIP, and lets another compiler produce machine code. Both start from the same graph; the difference is whether the walk produces values or text. A *JIT* (just-in-time) compiler compiles while the program runs, which is what your runtime does from chapter 2. Your compiler will do both: it folds what it can at compile time, and generates code for the rest.
 
 ### Lesson 2: numbers in a machine
 
@@ -114,7 +114,7 @@ Lesson 1 was about the program; this lesson is about the values it computes. You
 
 C makes signed overflow *undefined behavior*: the compiler may assume it never happens and optimize on that assumption ([N1570](#sources) §6.5p5). GCC and Clang make it wrap if you pass `-fwrapv`. This course defines `i32` arithmetic to wrap, so your generated C must be compiled that way, or written to use unsigned arithmetic.
 
-**Division truncates in C and floors in Python.** C rounds the quotient toward zero: `-7 / 2` is `-3`, and the remainder takes the sign of the dividend, so `-7 % 2` is `-1` ([N1570](#sources) §6.5.5). Python's `//` rounds toward negative infinity: `-7 // 2` is `-4`, and `-7 % 2` is `1`, always non-negative for a positive divisor. Each language's own `/` and `%` satisfy `(a / b) * b + a % b == a`; the two languages differ only when the signs differ and the division is not exact. This course uses floor division; week 1 explains why.
+**Division truncates in C and floors in Python.** C rounds the quotient toward zero: `-7 / 2` is `-3`, and the remainder takes the sign of the dividend, so `-7 % 2` is `-1` ([N1570](#sources) §6.5.5). Python's `//` rounds toward negative infinity: `-7 // 2` is `-4`, and `-7 % 2` is `1`, always non-negative for a positive divisor. Each language's own `/` and `%` satisfy `(a / b) * b + a % b == a`; the two languages differ only when the signs differ and the division is not exact. This course uses floor division; chapter 1 explains why.
 
 **Floats are IEEE 754.** An `f32` has a sign bit, 8 exponent bits and 23 fraction bits. A normal value is `(−1)^sign × 1.fraction × 2^(exponent − 127)` ([Goldberg 1991](#sources)). Consequences you will meet:
 
@@ -165,13 +165,13 @@ assert f32(16777216.0 + 1.0 + 1.0) == 16777218.0        # rounding once at the e
 
 **Conversions.** Converting `f32` to `i32` in C truncates toward zero, and is undefined if the value does not fit, including NaN and infinities. Converting `i32` to `f32` rounds to a nearby float (the nearest, on every mainstream target): large integers lose their low bits. Converting to a boolean tests for non-zero.
 
-**Functions are polynomials.** There is no `exp` or `sin` instruction a compiler can rely on everywhere; week 5 builds them from `+` and `×`. For example, `exp2(x)` splits `x` into an integer part, which goes straight into the float's exponent bits, and a small fractional part, where a short polynomial (a Taylor or minimax approximation) is accurate enough ([Muller 2016](#sources)).
+**Functions are polynomials.** There is no `exp` or `sin` instruction a compiler can rely on everywhere; chapter 5 builds them from `+` and `×`. For example, `exp2(x)` splits `x` into an integer part, which goes straight into the float's exponent bits, and a small fractional part, where a short polynomial (a Taylor or minimax approximation) is accurate enough ([Muller 2016](#sources)).
 
-If any of this is new, read CS:APP chapter 2 before week 1. Most week-1 bugs are here.
+If any of this is new, read CS:APP chapter 2 before chapter 1. Most chapter-1 bugs are here.
 
 ### Lesson 3: graphs, substitution and intervals
 
-**Sharing matters.** Lesson 1's graph computes `a + b` once. In a chain of `n` such squarings the graph (a DAG: nodes with inputs, no cycles) has `n + 1` nodes, but the tree has `2^(n+1) − 1`. Any algorithm that walks a DAG as if it were a tree does exponential work. The fix is **memoization**: remember each node's result the first time and look it up afterwards; in Python, a dict keyed by node, or `functools.cache`. Giving each distinct expression exactly one node in the first place, with a table from (operation, inputs, constant) to node, is *interning*; week 1 calls it hash-consing.
+**Sharing matters.** Lesson 1's graph computes `a + b` once. In a chain of `n` such squarings the graph (a DAG: nodes with inputs, no cycles) has `n + 1` nodes, but the tree has `2^(n+1) − 1`. Any algorithm that walks a DAG as if it were a tree does exponential work. The fix is **memoization**: remember each node's result the first time and look it up afterwards; in Python, a dict keyed by node, or `functools.cache`. Giving each distinct expression exactly one node in the first place, with a table from (operation, inputs, constant) to node, is *interning*; chapter 1 calls it hash-consing.
 
 **Order of evaluation.** A node can be computed once its inputs are. A **topological order** lists every node after all its inputs. A depth-first search that appends each node after visiting its inputs produces one ([Kahn 1962](#sources) gives the other classic algorithm, by counting inputs):
 
@@ -196,9 +196,9 @@ assert toposort(graph, "d") == ["a", "b", "c", "d"]
 
 Recursion is the clearest way to write this, but each nested call uses stack space, and Python stops at about 1,000 levels. Deep graphs need an explicit stack. Know how to convert one to the other.
 
-**Substitution.** Calling a function means replacing its parameters with the arguments: `f(x) = x * x + 1` applied to `3` is `3 * 3 + 1`. This is the lambda calculus's *beta reduction* ([Rojas 2015](#sources)). Inside `f`, `x` is a *bound* variable; a name used inside but defined outside is *free*. Substituting by name can go wrong when an argument's free variable has the same name as a variable bound inside the function (*capture*): in `g(y) = x + y`, substituting an outer `y` for `x` gives `g(y) = y + y`, and the outer `y` has been captured by `g`'s parameter. Naming parameters by position instead (parameter 0, parameter 1), with each function body using only its own parameters, avoids the problem; that is what week 1's `PARAM slot=0` with closed bodies does.
+**Substitution.** Calling a function means replacing its parameters with the arguments: `f(x) = x * x + 1` applied to `3` is `3 * 3 + 1`. This is the lambda calculus's *beta reduction* ([Rojas 2015](#sources)). Inside `f`, `x` is a *bound* variable; a name used inside but defined outside is *free*. Substituting by name can go wrong when an argument's free variable has the same name as a variable bound inside the function (*capture*): in `g(y) = x + y`, substituting an outer `y` for `x` gives `g(y) = y + y`, and the outer `y` has been captured by `g`'s parameter. Naming parameters by position instead (parameter 0, parameter 1), with each function body using only its own parameters, avoids the problem; that is what chapter 1's `PARAM slot=0` with closed bodies does.
 
-**Reasoning with intervals.** A compiler often needs facts about values it does not know, such as "this index is never negative". Track an interval `[lo, hi]` for each value: if `x` is in `[0, 3]` and `y` in `[0, 3]`, then `4x + y` is in `[0, 15]`. Addition adds the ends; multiplication takes the smallest and largest of the four products of ends, because signs can flip the order. The result is always true but may be loose: `x − x` gets `[−3, 3]`, not `0`. This is the simplest case of *abstract interpretation* ([Cousot & Cousot 1977](#sources)); week 1 calls the intervals `bounds`.
+**Reasoning with intervals.** A compiler often needs facts about values it does not know, such as "this index is never negative". Track an interval `[lo, hi]` for each value: if `x` is in `[0, 3]` and `y` in `[0, 3]`, then `4x + y` is in `[0, 15]`. Addition adds the ends; multiplication takes the smallest and largest of the four products of ends, because signs can flip the order. The result is always true but may be loose: `x − x` gets `[−3, 3]`, not `0`. This is the simplest case of *abstract interpretation* ([Cousot & Cousot 1977](#sources)); chapter 1 calls the intervals `bounds`.
 
 **Pattern matching.** Optimizations are written as rules: "if a node is `x + 0`, replace it with `x`". Practice writing small functions that match on a node's operation and inputs and return a new node or nothing, for example a `simplify(node)` that returns `x` for `x + 0` and `None` otherwise.
 
@@ -208,7 +208,7 @@ Recursion is the clearest way to write this, but each nested call uses stack spa
 
 - **Arrays are pointers plus offsets.** A 2-D matrix is one flat array; element `[i][j]` of an `n`-column matrix is at `i * n + j` (row-major order).
 - **Functions take pointers to buffers** and write results through them.
-- **Compilation and linking.** `gcc -c` turns a `.c` file into an object file; `gcc -shared -fPIC` produces a shared library that a running program can load with `dlopen` and call through a function pointer ([dlopen(3)](#sources); [CS:APP](#sources) ch. 7). This is one simple way to build week 2's runtime: generate C, compile it to a shared library, load it, and call it.
+- **Compilation and linking.** `gcc -c` turns a `.c` file into an object file; `gcc -shared -fPIC` produces a shared library that a running program can load with `dlopen` and call through a function pointer ([dlopen(3)](#sources); [CS:APP](#sources) ch. 7). This is one simple way to build chapter 2's runtime: generate C, compile it to a shared library, load it, and call it.
 
 **Tensors are flat memory plus a shape.** A tensor of shape `(2, 3, 4)` is 24 numbers in one buffer. In row-major order the last axis is contiguous, and each earlier axis steps over a whole block of the later ones. The step per axis is its **stride**:
 
@@ -244,9 +244,9 @@ assert unflatten(45, (4, 5, 6)) == (1, 2, 3)   # 30*1 + 6*2 + 3 = 45
 - **Transpose** permutes the index: element `[i, j]` of the transpose of a `(2, 3)` tensor is the original's `[j, i]`, at flat offset `3j + i`. Transposing swaps the strides.
 - **Slice and pad** add an offset to the index, and check it against a range.
 
-Weeks 3–5 build exactly these expressions, and week 1's symbolic rules simplify them back.
+Chapters 3–5 build exactly these expressions, and chapter 1's symbolic rules simplify them back.
 
-**Broadcasting.** Elementwise operations on tensors of different shapes align the shapes from the right; each pair of sizes must be equal, or one of them must be 1, which is stretched ([NumPy](#sources)). In this course broadcasting arrives in week 4, as an explicit `EXPAND` op.
+**Broadcasting.** Elementwise operations on tensors of different shapes align the shapes from the right; each pair of sizes must be equal, or one of them must be 1, which is stretched ([NumPy](#sources)). In this course broadcasting arrives in chapter 4, as an explicit `EXPAND` op.
 
 ```python
 def broadcast(a: tuple[int, ...], b: tuple[int, ...]) -> tuple[int, ...]:
@@ -359,9 +359,9 @@ assert w.grad == -18.0
 
 A training loop repeats this: step `w` against `w.grad`, recompute the loss, and go again.
 
-Week 6 builds the same thing as a rewrite on UOps: `GRADIENT` of a loss with respect to a buffer becomes a new graph.
+Chapter 6 builds the same thing as a rewrite on UOps: `GRADIENT` of a loss with respect to a buffer becomes a new graph.
 
-**Attention.** The layer that makes a transformer is attention: `softmax(Q Kᵀ / √d) V`, where `Q`, `K` and `V` are linear layers of the input ([Vaswani et al. 2017](#sources)). It is two matrix multiplies with a softmax between, which is why weeks 8–10 care so much about fast matrix multiplies and about fusing the softmax into them.
+**Attention.** The layer that makes a transformer is attention: `softmax(Q Kᵀ / √d) V`, where `Q`, `K` and `V` are linear layers of the input ([Vaswani et al. 2017](#sources)). It is two matrix multiplies with a softmax between, which is why chapters 8–10 care so much about fast matrix multiplies and about fusing the softmax into them.
 
 ### Lesson 6: hardware and performance
 
@@ -389,19 +389,19 @@ int main(void) {
 }
 ```
 
-Both loops compute the same sum; time them with a larger `N` and the column order is much slower. Your compiler generates loop nests from week 4 (rangeify), and chooses their order for speed from week 6 on.
+Both loops compute the same sum; time them with a larger `N` and the column order is much slower. Your compiler generates loop nests from chapter 4 (rangeify), and chooses their order for speed from chapter 6 on.
 
-**Arithmetic intensity** is operations per byte moved. The roofline model says a kernel's speed is capped by whichever is lower, the peak compute rate or memory bandwidth times intensity ([Williams et al. 2009](#sources)). An `f32` elementwise add does one operation per 12 bytes moved (two 4-byte reads and one write) and is bandwidth-bound. An `n × n` matrix multiply does `2n³` operations on `3n²` values, so with good reuse it can be compute-bound. **Fusion** raises intensity for free: `relu(x * w + b)` computed as three loops writes and re-reads two temporary arrays; as one loop, the temporaries stay in registers. Deciding what to fuse and what to keep in memory is week 4's job.
+**Arithmetic intensity** is operations per byte moved. The roofline model says a kernel's speed is capped by whichever is lower, the peak compute rate or memory bandwidth times intensity ([Williams et al. 2009](#sources)). An `f32` elementwise add does one operation per 12 bytes moved (two 4-byte reads and one write) and is bandwidth-bound. An `n × n` matrix multiply does `2n³` operations on `3n²` values, so with good reuse it can be compute-bound. **Fusion** raises intensity for free: `relu(x * w + b)` computed as three loops writes and re-reads two temporary arrays; as one loop, the temporaries stay in registers. Deciding what to fuse and what to keep in memory is chapter 4's job.
 
-Much of the speed work in weeks 6–8 is about reuse: blocking loops so that a tile of data is used many times while it is in cache ([Goto & van de Geijn 2008](#sources)).
+Much of the speed work in chapters 6–8 is about reuse: blocking loops so that a tile of data is used many times while it is in cache ([Goto & van de Geijn 2008](#sources)).
 
 **Parallelism comes in three sizes.**
 
-- **SIMD vectors:** one instruction operates on several values at once, for example 8 `f32`s in a 256-bit register. C compilers vectorize simple loops themselves; week 8's *upcasting* makes the vector width explicit ([CS:APP](#sources) ch. 5).
+- **SIMD vectors:** one instruction operates on several values at once, for example 8 `f32`s in a 256-bit register. C compilers vectorize simple loops themselves; chapter 8's *upcasting* makes the vector width explicit ([CS:APP](#sources) ch. 5).
 - **Threads:** several cores run parts of a loop at once. Each thread should write its own outputs. Two threads updating one location without coordination is a *data race*, and the result is undefined ([CS:APP](#sources) ch. 12).
 
 
-- **GPUs:** thousands of threads run one function, the *kernel*. Threads are grouped into blocks (AMD: *workgroups*) that can share fast on-chip memory, and the hardware executes threads in fixed-size groups in lockstep. GPUs also have matrix units (AMD: *matrix cores*, used through WMMA and MFMA instructions) that multiply small tiles of matrices in one instruction ([AMD WMMA](#sources)); week 7 uses them. Before week 7, it helps to have written and launched one simple GPU kernel in any GPU language.
+- **GPUs:** thousands of threads run one function, the *kernel*. Threads are grouped into blocks (AMD: *workgroups*) that can share fast on-chip memory, and the hardware executes threads in fixed-size groups in lockstep. GPUs also have matrix units (AMD: *matrix cores*, used through WMMA and MFMA instructions) that multiply small tiles of matrices in one instruction ([AMD WMMA](#sources)); chapter 7 uses them. Before chapter 7, it helps to have written and launched one simple GPU kernel in any GPU language.
 
 > **AMD.** AMD calls a hardware thread group a *wavefront*: 64 threads on CDNA (Instinct) GPUs; 32 by default on RDNA (Radeon) GPUs, which also support 64 ([AMD HIP programming model](#sources)). The syllabus says "CUDA/HIP"; this recreation targets AMD GPUs only, through HIP, AMD's C++ dialect for GPU kernels.
 
@@ -425,7 +425,7 @@ assert f32(sum_f32(xs[:2]) + sum_f32(xs[2:])) == 0.0       # two threads, then c
 
 ## Self-check
 
-Questions 1–8 are what weeks 1–3 need: answer them without looking anything up before you start. Questions 9 and 10 can wait until weeks 5–6.
+Questions 1–8 are what chapters 1–3 need: answer them without looking anything up before you start. Questions 9 and 10 can wait until chapters 5–6.
 
 1. What is `INT32_MAX + 1` in C without `-fwrapv`, and with it?
    <details><summary>Answer</summary>Without it, undefined behavior: the compiler may assume it does not happen. With it, <code>INT32_MIN</code> (−2147483648).</details>
@@ -450,7 +450,7 @@ Questions 1–8 are what weeks 1–3 need: answer them without looking anything 
 
 ## Glossary
 
-Terms the course uses, defined in this chapter or the week shown.
+Terms the course uses, defined in this chapter or the chapter shown.
 
 | Term | Meaning |
 |------|---------|
@@ -466,12 +466,12 @@ Terms the course uses, defined in this chapter or the week shown.
 | Schedule | The choices of loop order, tiling and parallel mapping for a kernel |
 | Code generation | Printing the IR as target code |
 | Runtime | The code that loads compiled kernels, owns buffers and calls kernels |
-| Hash-consing | Building each distinct node once, so equal nodes are the same object (week 1) |
+| Hash-consing | Building each distinct node once, so equal nodes are the same object (chapter 1) |
 | Memoization | Remembering a function's result for each input, so it is computed once |
-| Bounds | The interval of values a node can take (week 1) |
-| Hoisting | Computing something once before a loop instead of in every iteration (week 3) |
-| Accumulator | Memory a loop reads and updates on every iteration, as in a sum (week 3) |
-| Materialize | Write an intermediate result to memory instead of recomputing or fusing it (week 4) |
+| Bounds | The interval of values a node can take (chapter 1) |
+| Hoisting | Computing something once before a loop instead of in every iteration (chapter 3) |
+| Accumulator | Memory a loop reads and updates on every iteration, as in a sum (chapter 3) |
+| Materialize | Write an intermediate result to memory instead of recomputing or fusing it (chapter 4) |
 
 ## Where to learn more
 

@@ -1,4 +1,4 @@
-# Week 1: UOps & Rewrites & Renderer?
+# Chapter 1: UOps & Rewrites & Renderer?
 
 > **`uops` · `elementwise ops` · `symbolic` · `rewrites` · `renderer`**
 >
@@ -71,7 +71,7 @@ Intervals are written `[lo, hi]` throughout, both ends included.
 
 ### Lesson 1: course intro, Turing completeness, the UOp, the format, the first assignment
 
-**What the course builds.** A compiler takes a program and produces a faster equivalent one. Ours takes small tensor programs and, by week 9, trains a language model on a GPU. Every week adds a few ops and one new idea, and the syllabus grades each week's compiler against all student and teacher tests. It calls the course "an exercise in slop management": shortcuts taken now get harder to undo each week.
+**What the course builds.** A compiler takes a program and produces a faster equivalent one. Ours takes small tensor programs and, by chapter 9, trains a language model on a GPU. Every chapter adds a few ops and one new idea, and your compiler must keep passing every earlier chapter's tests. It calls the course "an exercise in slop management": shortcuts taken now get harder to undo with every chapter.
 
 **The UOp.** Everything in the compiler is one data structure, `UOp(op, src, arg)`:
 
@@ -102,7 +102,7 @@ assert UOp("ADD", (two, three)) is UOp("ADD", (two, three))
 
 The key can use `src` directly because its elements are already unique objects, so comparing them is cheap. The rest of the key must tell apart values your language considers equal. In Python, `True == 1 == 1.0`, so the key includes `type(arg)`; floats have two more traps, which the `repr` handles.
 
-**Recursive properties.** UOps never change, so anything computed from a node and its sources is fixed forever. The syllabus calls these *recursive properties*: `dtype`, `shape`, `cost` and `bounds` this week (rules in [Properties introduced](#properties-introduced)). Compute each once and cache it on the node. For `%x = add (index [10 20 30] 2) 1`:
+**Recursive properties.** UOps never change, so anything computed from a node and its sources is fixed forever. The syllabus calls these *recursive properties*: `dtype`, `shape`, `cost` and `bounds` this chapter (rules in [Properties introduced](#properties-introduced)). Compute each once and cache it on the node. For `%x = add (index [10 20 30] 2) 1`:
 
 | Node | dtype | shape | cost | bounds |
 |------|-------|-------|------|--------|
@@ -114,7 +114,7 @@ Each row uses only the rows above it.
 
 **Turing completeness.** A language is Turing complete if it can express any computation, including ones that never finish. The lambda calculus is, because a function can be applied to itself ([Rojas 2015](#sources)). Our IR is not:
 
-> **Interpretation.** The syllabus lists the topic without a conclusion. A UOp graph is acyclic, so a function body cannot contain the call to itself. Parameters hold only `i32`, `f32` and `bool` values, never functions, so a body cannot receive itself as an argument either. With no recursion, and with week 3's loops having bounds fixed before they start, every program terminates. tinygrad reaches Turing completeness only through `BACKEDGE`, a while loop the course does not include.
+> **Interpretation.** The syllabus lists the topic without a conclusion. A UOp graph is acyclic, so a function body cannot contain the call to itself. Parameters hold only `i32`, `f32` and `bool` values, never functions, so a body cannot receive itself as an argument either. With no recursion, and with chapter 3's loops having bounds fixed before they start, every program terminates. tinygrad reaches Turing completeness only through `BACKEDGE`, a while loop the course does not include.
 
 This is a feature. A compiler that can see a whole program, with all its loop bounds, can decide how to split, fuse and schedule it.
 
@@ -135,7 +135,7 @@ Parsing is direct: each line, and each nested `(op ...)`, is one UOp constructor
 
 ### Lesson 2: ALU ops, bottom-up greedy rewrite engines, constant folding
 
-**The ALU ops.** The ALU ops and their dtypes are in [Ops introduced](#ops-introduced). This week they take rank-0 sources only. The set is small on purpose; other operations are combinations:
+**The ALU ops.** The ALU ops and their dtypes are in [Ops introduced](#ops-introduced). This chapter they take rank-0 sources only. The set is small on purpose; other operations are combinations:
 
 | You want | Write |
 |----------|-------|
@@ -147,9 +147,9 @@ Parsing is direct: each line, and each nested `(op ...)`, is one UOp constructor
 | min(a, b) | `where (cmplt a b) a b` |
 | a / b (`f32`) | `mul a (recip b)` |
 
-`mul a (recip b)` rounds twice, so it can differ from a true `a / b` in the last bit. Fewer ops means fewer rewrite rules, a smaller renderer next week, and fewer derivative rules in week 6.
+`mul a (recip b)` rounds twice, so it can differ from a true `a / b` in the last bit. Fewer ops means fewer rewrite rules, a smaller renderer in chapter 2, and fewer derivative rules in chapter 6.
 
-**Exact semantics.** An interpreter and the C code you generate next week must agree bit for bit, so the edge cases are fixed in [uir.md](../uir.md#arithmetic). The ones that catch everyone:
+**Exact semantics.** An interpreter and the C code you generate in chapter 2 must agree bit for bit, so the edge cases are fixed in [uir.md](../uir.md#arithmetic). The ones that catch everyone:
 
 - **`i32` wraps.** `add 2147483647 1` is `-2147483648`. Python integers do not wrap, so wrap explicitly after every `i32` op. In C, signed overflow is undefined behavior ([N1570 §6.5p5](#sources)); GCC and Clang make it wrap with `-fwrapv`.
 - **`DIV` and `MOD` floor.** `div -7 2` is `-4` and `mod -7 2` is `1`, matching Python's `//` and `%`. C's `/` truncates toward zero and gives `-3` ([N1570 §6.5.5](#sources)). Floor division keeps index arithmetic regular: `mod x 4` is always in `[0, 3]`, even for negative `x`. Lesson 3 shows why that matters.
@@ -266,11 +266,11 @@ Bounds pay off with `DIV` and `MOD`. In
 
 `mul %x 4` is in `[0, 396]`, so it cannot wrap, and `mod %y 4` is in `[0, 3]`, so it never carries into the quotient: `%g` is just `%x`. A rule for this must check both facts from bounds; if `%x` were an unbounded PARAM, `mul %x 4` could wrap (at `x = 2^29`) and the rule must not fire.
 
-The rule also needs floor semantics: with C's `%`, `y = -1` gives a remainder of `-1`, and for `x = 1` C's quotient is `0`, not `1`. Index arithmetic in weeks 3–5 is full of `div` and `mod` by shape sizes, with loop indices whose bounds are known; rules like this turn it back into simple loops.
+The rule also needs floor semantics: with C's `%`, `y = -1` gives a remainder of `-1`, and for `x = 1` C's quotient is `0`, not `1`. Index arithmetic in chapters 3–5 is full of `div` and `mod` by shape sizes, with loop indices whose bounds are known; rules like this turn it back into simple loops.
 
 **Computer algebra systems.** A symbolic simplifier is a small computer algebra system (CAS): it rewrites expressions toward a canonical form, so that equal expressions become identical UOps. A full CAS cannot always decide whether two expressions are equal, and neither can yours. That is fine: a missed simplification makes code slower, never wrong. What is never fine is the opposite mistake: **a rewrite must never change a program's meaning**, including at the edges (wrapping, NaN, `-0.0`, negative numbers).
 
-Greedy rules commit to one rewrite at a time. *Equality saturation* instead keeps every equivalent form in an *e-graph* (a graph whose nodes are sets of equal expressions) and picks the cheapest at the end ([Tate et al. 2009](#sources); [Willsey et al. 2021](#sources)). It avoids rule-order problems at a cost in memory. The `cost` property is the kind of measure such a choice needs; this week you only compute it.
+Greedy rules commit to one rewrite at a time. *Equality saturation* instead keeps every equivalent form in an *e-graph* (a graph whose nodes are sets of equal expressions) and picks the cheapest at the end ([Tate et al. 2009](#sources); [Willsey et al. 2021](#sources)). It avoids rule-order problems at a cost in memory. The `cost` property is the kind of measure such a choice needs; for now you only compute it.
 
 ## Ops introduced
 
@@ -293,7 +293,7 @@ Greedy rules commit to one rewrite at a time. *Equality saturation* instead keep
 Your compiler rejects programs that break these rules, checked on the program as written ([why](../uir.md#validation)):
 
 - **ALU ops are rank 0.** Every source of `CAST`, `RECIP`, `ADD`, `MUL`, `MAX`, `XOR`, `CMPLT`, `SHL`, `DIV`, `MOD` and `WHERE` has shape `()`.
-- **STACK sources are constants**, and values are at most rank 1 (rank 2 arrives in week 5). `[1 2 3]` is allowed; `[[1 2] [3 4]]` (rank 2) and `[%x 2]` (not a constant) are not.
+- **STACK sources are constants**, and values are at most rank 1 (rank 2 arrives in chapter 5). `[1 2 3]` is allowed; `[[1 2] [3 4]]` (rank 2) and `[%x 2]` (not a constant) are not.
 - **INDEX stays in bounds.** Each index's bounds must lie inside `[0, n − 1]`. A PARAM's bounds are its dtype's full range, so a body that indexes by a parameter writes `index [1 2 3] (mod %p 3)`.
 - **Dtypes match.** Typed operands of an ALU op have the same dtype ([conventions](../uir.md#mixing-dtypes)).
 - **PARAMs live in bodies.** A PARAM the root reaches outside any CALL body is an error: nothing binds it.
@@ -316,7 +316,7 @@ Your compiler rejects programs that break these rules, checked on the program as
 
 ## Assignment
 
-Due Wednesday of week 2, before the 10 AM class. Your ten tests, in UIR, are due the Monday before.
+Start by writing ten tests of your own in UIR (the syllabus asks for ten each week), and check them with the [oracle](../oracle/README.md).
 
 Write a program that takes a `.uir` file and:
 
@@ -328,7 +328,7 @@ Write a program that takes a `.uir` file and:
 
 Also implement the identity, reassociation and canonical-order rules, and the two bounds rules from Lesson 3 (`cmplt` against a bound, and the `div`/`mod` rule). No assert can tell whether a correct rule fired, since every program folds to constants. Check them by printing the rewritten body of [examples/symbolic.uir](examples/symbolic.uir) before inlining, in UIR or any readable form: it should be `mod %a 100`. An assert can catch a wrong rule, though: a test whose body is `div (add (mul %a 4) (mod %y 4)) 4` with an unbounded `%a`, called with `a = 536870912` and `y = 0`, must give `-536870912` (`mul` wraps to −2^31), not `a`.
 
-Restrictions this week: ALU ops take rank-0 sources; values are at most rank 1; stack sources are constants. Keep the rewrite rules in a list you can extend: weeks 2–6 add to it. The renderer comes next week; this week, rewriting is the whole compiler.
+Restrictions this chapter: ALU ops take rank-0 sources; values are at most rank 1; stack sources are constants. Keep the rewrite rules in a list you can extend: chapters 2–6 add to it. The renderer comes in chapter 2; for now, rewriting is the whole compiler.
 
 ## Example programs
 
@@ -347,11 +347,11 @@ All in [examples/](examples/). Each file's comments show the hand calculation.
 
 ## Spec notes
 
-> **Spec note.** The week's title ends "Renderer?" and its tags include `renderer`, but the text asks only for an interpreter, and week 2 says "Students write a renderer". This chapter follows the text: rendering starts in week 2.
+> **Spec note.** The week's title ends "Renderer?" and its tags include `renderer`, but the text asks only for an interpreter, and week 2 says "Students write a renderer". This chapter follows the text: rendering starts in chapter 2.
 
 > **Spec note.** "All shapes are rank 0" and "We allow rank 1 shapes here" conflict. This chapter reads the second sentence as the rule: values may be rank 1 (stacks, params), ALU ops may not.
 
-> **Spec note.** Week 1 says STACK inputs are limited "until week 4", but week 5 is where "STACK supports arbitrary inputs". This chapter only needs the week-1 rule; the week-4 and week-5 chapters will follow week 5's wording.
+> **Spec note.** Week 1 says STACK inputs are limited "until week 4", but week 5 is where "STACK supports arbitrary inputs". This chapter only needs the week-1 rule; chapters 4 and 5 will follow week 5's wording.
 
 > **Interpretation.** The spec names the arg types `ParamArg` and `CallArg` without defining them. Here a PARAM's arg is its `slot` and `dtype`, and its `src[0]` is its shape, as in tinygrad (`[]` is an empty stack used only as a shape). A CALL needs no arg this week.
 
@@ -367,7 +367,7 @@ All in [examples/](examples/). Each file's comments show the hand calculation.
    <details><summary>Answer</summary>The arg's type. Many languages treat <code>1</code> and <code>1.0</code> as equal (Python also <code>True</code>), so a key with only the value would merge them, and the dtype of a CONST comes from its arg.</details>
 2. What are `div -7 2` and `mod -7 2`? What does C's `-7 / 2` give?
    <details><summary>Answer</summary><code>-4</code> and <code>1</code> (floor). C gives <code>-3</code> (truncation toward zero), with remainder <code>-1</code>.</details>
-3. Write `a - b` for `i32` values using only week-1 ops.
+3. Write `a - b` for `i32` values using only chapter-1 ops.
    <details><summary>Answer</summary><code>add a (mul b -1)</code>.</details>
 4. If `%x` has bounds `[0, 3]`, what are the bounds of `add (mul %x 4) (mod %y 4)`, for any `%y`?
    <details><summary>Answer</summary><code>mul %x 4</code> is <code>[0, 12]</code> and <code>mod %y 4</code> is <code>[0, 3]</code>, so the sum is <code>[0, 15]</code>.</details>

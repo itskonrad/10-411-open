@@ -1,3 +1,3 @@
-# Week 6: Autodiff & Speed
+# Chapter 6: Autodiff & Speed
 
 Not written yet.

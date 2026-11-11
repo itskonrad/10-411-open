@@ -4,7 +4,7 @@
 >
 > — the syllabus
 
-UIR is a text form of a UOp graph. Tests are written in it, and your compiler reads it. This page defines the format and the conventions every chapter shares, and lists every op with the week that introduces it. The chapters define what each op means.
+UIR is a text form of a UOp graph. Tests are written in it, and your compiler reads it. This page defines the format and the conventions every chapter shares, and lists every op with the chapter that introduces it. The chapters define what each op means.
 
 > **Interpretation.** The syllabus shows UIR only by example. A few rules below also cite *the draft course page*, an earlier web version of the syllabus with short UIR examples per week; where it disagrees with the syllabus, the syllabus wins. The rules below follow tinygrad's UIR parser, `tinygrad/uop/uir.py`, whose docstring says it reads "studentgrad's hand-written UIR". tinygrad has no `assert` op; it is specific to the course.
 
@@ -34,7 +34,7 @@ A program is a sequence of assignments:
 - **`#`** starts a comment that runs to the end of the line.
 - The last assignment is the program's root.
 
-The syllabus's own example (it uses ops from weeks 2–5; read it for the syntax only):
+The syllabus's own example (it uses ops from chapters 2–5; read it for the syntax only):
 
 ```text
 # gemm_256x256.uir
@@ -53,12 +53,12 @@ The syllabus's own example (it uses ops from weeks 2–5; read it for the syntax
 | Integer literal | `3`, `-7`, `0x2a` | A `CONST`; must fit in `i32` |
 | Float literal | `2.5`, `1e-3`, `-inf`, `nan` | A `CONST` |
 | Bool literal | `true`, `false` | A `CONST` of dtype `bool` |
-| Stack | `[1 2 3]`; `[[1 2] [3 4]]` from week 5 | A `STACK` of the values inside, which adds a leading axis |
+| Stack | `[1 2 3]`; `[[1 2] [3 4]]` from chapter 5 | A `STACK` of the values inside, which adds a leading axis |
 | Nested op | `(index %v 1)` | The same as a separate line, written inline |
 | Name | `%sum` | The value bound to that name |
 | Scoped block | `{ %a = ...  %b = ... }` | The value of its last assignment; its names are not visible outside |
 
-Nested ops and stacks are shorthand. These two programs build the same graph, because UOps are hash-consed (week 1):
+Nested ops and stacks are shorthand. These two programs build the same graph, because UOps are hash-consed (chapter 1):
 
 ```text
 %x = add (index [10 20 30] 1) 1
@@ -69,7 +69,7 @@ Nested ops and stacks are shorthand. These two programs build the same graph, be
 %x = add %v 1
 ```
 
-> **Interpretation.** The draft course page introduces scoped blocks with week 6's "syntactic sugar and lexical scopes". Earlier weeks do not need them.
+> **Interpretation.** The draft course page introduces scoped blocks with week 6's "syntactic sugar and lexical scopes". Earlier chapters do not need them.
 
 ## Arguments
 
@@ -135,9 +135,9 @@ Your interpreter and the code you generate must agree bit for bit (except NaN pa
 | `STACK` | Smallest `vmin` to largest `vmax` of its elements |
 | `INDEX` | The indexed value's bounds |
 | `CALL` | The body's bounds |
-| `RANGE` (week 3) | `[0, end − 1]`; the end is a constant ≥ 1 |
-| `AFTER` (week 2) | The value's bounds |
-| `LOAD` (week 2) | The dtype's full range |
+| `RANGE` (chapter 3) | `[0, end − 1]`; the end is a constant ≥ 1 |
+| `AFTER` (chapter 2) | The value's bounds |
+| `LOAD` (chapter 2) | The dtype's full range |
 | `ADD` | `[a0 + b0, a1 + b1]` |
 | `MUL` | Smallest to largest of the four products of ends |
 | `MAX` | `[max(a0, b0), max(a1, b1)]` |
@@ -154,17 +154,17 @@ An `i32` result whose interval leaves the `i32` range widens to the full `i32` r
 
 ### Validation
 
-Programs are checked as written, before any rewriting. Every line is checked on its own (its op, args, dtypes, shapes and bounds), whether or not the root reaches it; whole-program checks (ordering, loops, parameters) cover the graph the root reaches. A program has exactly one `assert` line, its last, wherever other lines are. A check that uses bounds (in-range indices; from week 2, also loads and stores) passes only if the bounds of the program as written prove it. *Why:* a compiler that rejects programs only after optimizing would accept or reject the same program depending on which rules it implements.
+Programs are checked as written, before any rewriting. Every line is checked on its own (its op, args, dtypes, shapes and bounds), whether or not the root reaches it; whole-program checks (ordering, loops, parameters) cover the graph the root reaches. A program has exactly one `assert` line, its last, wherever other lines are. A check that uses bounds (in-range indices; from chapter 2, also loads and stores) passes only if the bounds of the program as written prove it. *Why:* a compiler that rejects programs only after optimizing would accept or reject the same program depending on which rules it implements.
 
 ### Evaluation
 
-A node is computed once for each combination of values of the loops (RANGEs) it depends on, and of every loop enclosing one of those. Loop `o` encloses loop `k` when `o` is still open where `k` ends: `o` is in the `ranges` of `k`'s END (and, transitively, anything enclosing `o`). So a node that uses only `k` still runs once per value of `o` and `k`. A node that depends on no loop is computed once, before the loops, even if a node inside a loop uses it. Weeks 1 and 2 have no loops, so there every node is computed once and, because loads and stores are fully ordered, any topological order gives the same result. *Why:* this is what tinygrad does: its linearizer makes each inner loop's bound depend on the enclosing RANGE, so everything inside the inner loop depends on the outer one too, and then places each node at the depth of its loops (`tinygrad/codegen/late/linearizer.py`). Loop-invariant code is hoisted for free.
+A node is computed once for each combination of values of the loops (RANGEs) it depends on, and of every loop enclosing one of those. Loop `o` encloses loop `k` when `o` is still open where `k` ends: `o` is in the `ranges` of `k`'s END (and, transitively, anything enclosing `o`). So a node that uses only `k` still runs once per value of `o` and `k`. A node that depends on no loop is computed once, before the loops, even if a node inside a loop uses it. Chapters 1 and 2 have no loops, so there every node is computed once and, because loads and stores are fully ordered, any topological order gives the same result. *Why:* this is what tinygrad does: its linearizer makes each inner loop's bound depend on the enclosing RANGE, so everything inside the inner loop depends on the outer one too, and then places each node at the depth of its loops (`tinygrad/codegen/late/linearizer.py`). Loop-invariant code is hoisted for free.
 
 ### Programs and ASSERT
 
 - **The root.** A test program has exactly one `assert`, on its last line, which is the root. Nodes the root does not reach are checked ([Validation](#validation)) but never evaluated or rendered: UOps form a graph, not a list of statements.
 - **`assert actual expected`.** Two sources of the same shape. Passes when every element is numerically equal (`-0.0` equals `0.0`; NaN equals nothing). The expected value is usually a literal, which takes the actual value's dtype.
-- **Memory (from week 2).** When `actual` is a buffer (`after %buf %done`), ASSERT compares the buffer's contents.
+- **Memory (from chapter 2).** When `actual` is a buffer (`after %buf %done`), ASSERT compares the buffer's contents.
 
 *Why:* the draft course page writes one assert per example ("Each assert pairs a result with its expected value"). Exact comparison is enough while tests use small integers and halves, which `f32` represents exactly.
 
@@ -172,11 +172,11 @@ A node is computed once for each combination of values of the loops (RANGEs) it 
 
 `slot=` numbers things of one kind: the arguments of a CALL (PARAM), the buffers of a program (BUFFER, ALLOC), and the loops of a program (RANGE). A buffer and a range may both be `slot=0`. *Why:* tinygrad's ParamArg and RANGE each carry their own slot.
 
-## Ops by week
+## Ops by chapter
 
-The syllabus introduces these ops in these weeks. Chapters define each op; this table is the index.
+Each chapter introduces the ops of one syllabus week and defines them; this table is the index.
 
-| Week | Op | Srcs | Args | Chapter |
+| Chapter | Op | Srcs | Args | Details |
 |------|----|------|------|---------|
 | 1 | `const` | none; written as a literal | the value | [1](01-uops-and-rewrites/README.md#ops-introduced) |
 | 1 | `param` | shape: `[]` for `()`, or `n` for `(n,)` | `slot` `dtype` | [1](01-uops-and-rewrites/README.md#ops-introduced) |

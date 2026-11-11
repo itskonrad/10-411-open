@@ -1,3 +1,3 @@
-# Week 5: Movement Ops
+# Chapter 5: Movement Ops
 
 Not written yet.
