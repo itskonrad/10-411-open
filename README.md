@@ -1,4 +1,4 @@
-# 10-411: Compilers for Machine Learning — my take
+# 10-411 Open: Compilers for Machine Learning
 
 My unofficial, self-study version of CMU's 10-411 ([course page](https://10-411.com/)), built from its public syllabus: [geohot's gist](https://gist.github.com/geohot/4768597d9dc536446ee2d5de1f29e89d) (copy in [syllabus/](syllabus/syllabus.md)). The course materials are not public, so these chapters are my own, following the syllabus week by week, with GPU work targeting **AMD GPUs (ROCm/HIP)**.
 
