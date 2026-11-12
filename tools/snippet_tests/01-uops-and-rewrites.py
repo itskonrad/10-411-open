@@ -45,4 +45,9 @@ assert rewrite(UOp("ADD", (const(0.5), const(0.25))), [fold_add], {}).op == "ADD
 # the symbolic example: x = a mod 100, then (x*4 + y mod 4) is in [0, 399], within i32
 xa = UOp("MOD", (x, const(100)))
 assert bounds(UOp("ADD", (UOp("MUL", (xa, const(4))), UOp("MOD", (y, const(4)))))) == (0, 399)
+# f32: rounds after every op, overflows to inf; rule testing finds the wrap at 2^29
+assert f32(f32(16777216.0 + 1.0) + 1.0) == 16777216.0 and f32(16777216.0 + 1.0 + 1.0) == 16777218.0
+assert f32(1e40) == float("inf") and f32(-1e40) == float("-inf")
+assert counterexample(lambda x: wrap32(x * 2) + 0, lambda x: wrap32(x * 2), 1) is None
+assert counterexample(lambda x: wrap32(x + 1), lambda x: x + 1, 1) == (2**31 - 1,)
 print("chapter 1 snippet tests passed")

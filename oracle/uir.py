@@ -136,9 +136,6 @@ def check_stack(u: UOp) -> None:
 def same_dtype(u: UOp, srcs: tuple[UOp, ...]) -> str:
   dtypes = {s.dtype for s in srcs}
   if len(dtypes) > 1:
-    floats = [s for s in srcs if s.op == "const" and s.dtype == "f32"]
-    if floats and "i32" in dtypes:
-      fail(u, "dtype", f"float constant {show(floats[0].arg)} cannot be i32 [uir.md Literals]")
     fail(u, "dtype", f"mixed dtypes {' and '.join(s.dtype for s in srcs)}: write a cast [uir.md Mixing dtypes]")
   return srcs[0].dtype
 
@@ -470,6 +467,9 @@ class Parser:
   def match(self, srcs: tuple[UOp, ...], inline: list[bool], line: int) -> tuple[UOp, ...]:
     typed = [s.dtype for s, lit in zip(srcs, inline) if not lit] or [s.dtype for s in srcs]
     dtype = "f32" if "f32" in typed else typed[0]
+    for s, lit in zip(srcs, inline):  # only an inline literal adopts a dtype; a named one is already typed
+      if lit and dtype == "i32" and s.op == "const" and s.dtype == "f32":
+        raise UIRError(line, "dtype", f"float literal {show(s.arg)} cannot be i32 [uir.md Literals]")
     return tuple(self.as_dtype(s, dtype, line) if lit else s for s, lit in zip(srcs, inline))
 
   def as_dtype(self, u: UOp, dtype: str | None, line: int) -> UOp:

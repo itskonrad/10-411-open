@@ -1,0 +1,6 @@
+# expect: dtype: mixed dtypes i32 and f32
+# A float literal on its own line is typed f32 there, so adding it to an i32 is a dtype mix, not a literal error.
+%i    = 1
+%f    = 2.5
+%x    = add %i %f
+%test = assert %x 3.5
