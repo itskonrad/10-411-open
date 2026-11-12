@@ -1,0 +1,11 @@
+# A SHRINK offset can be computed at run time, if bounds prove the window fits.
+# The offset is (5 mod 3) = 2 here, but the compiler only knows it is in [0, 2]: 2 + 2 <= 4, so it fits.
+# [0 0 0 0] with [7 8] stored at offset 2 gives [0 0 7 8].
+%n    = buffer [] slot=0 dtype=i32
+%buf  = buffer 4 slot=1 dtype=i32
+%sn   = store %n 5
+%init = store %buf [0 0 0 0]
+%off  = mod (load (after %n %sn)) 3
+%win  = shrink (after %buf %init) %off 2
+%put  = store %win [7 8]
+%test = assert (after %buf %put) [0 0 7 8]

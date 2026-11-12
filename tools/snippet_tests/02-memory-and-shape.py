@@ -52,3 +52,28 @@ try:
 except TypeError:
     pass
 print("chapter 2 snippet tests passed")
+
+# every other C block in the chapter is the renderer's output too
+def shown_block(first_line: str) -> list[str]:
+    return [line.strip() for line in readme.split(first_line + "\n")[1].split("\n}\n")[0].splitlines()]
+
+# What you build: examples/store_load.uir, its assert rendered as the return value
+assert shown_block("int kernel(int32_t *buf0) {")[:2] == render(toposort(ld), lambda u: "int32_t").splitlines()
+assert shown_block("int kernel(int32_t *buf0) {")[2] == "return v5 == 7;"
+# How to start: examples/add.uir from chapter 1
+v = UOp("ADD", (const(2), const(3)))
+assert shown_block("int kernel(void) {") == [render(toposort(v), lambda u: "int32_t"), "return v2 == 5;"]
+# Lesson 2: chained_stores with its assert
+full = readme.split("int kernel(int32_t *buf0) {\n")[2].split("\n}\n")[0]
+assert [line.strip() for line in full.splitlines()] == body.splitlines() + ["return buf0[0] == 1 && buf0[1] == 2;"]
+lib = compile_c("#include <stdint.h>\nint kernel(int32_t *buf0) {\n" + full + "\n}\n")
+assert lib.kernel((ctypes.c_int32 * 2)()) == 1
+# Lesson 2: the alloc_in_call and symbolic_offset kernels compile, run, and pass
+import re
+c_blocks = re.findall(r"^```c\n(.*?)^```$", readme, re.DOTALL | re.MULTILINE)
+alloc_src = next(b for b in c_blocks if "alloc1" in b)
+assert compile_c(alloc_src).kernel() == 1
+window_src = next(b for b in c_blocks if "int32_t *win" in b)
+n, buf = (ctypes.c_int32 * 1)(), (ctypes.c_int32 * 4)()
+assert compile_c(window_src).kernel(n, buf) == 1 and list(buf) == [0, 0, 7, 8]
+print("chapter 2 extra C-block tests passed")
