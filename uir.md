@@ -96,7 +96,7 @@ A `CONST`'s dtype is determined by its arg (the syllabus: "type determined by th
 | `2.5` | error | `2.5`, an `f32` | `f32` |
 | `true` | error | error | `bool` |
 
-"Must match" means: the other operand of a binary ALU op, the other branch of `where`, the target of a `store`, the actual value of an `assert`, the PARAM a `call` argument binds to, and the other elements of a stack. Indices are always `i32`.
+"Must match" means: the other operand of a binary ALU op, the other branch of `where`, the target of a `store`, the actual value of an `assert`, the PARAM a `call` argument binds to, and the other elements of a stack. Indices are always `i32`. From chapter 4, an `expand` of a literal written inline, `(expand 1 4)`, is matched like the literal: next to an `f32` vector it is `[1.0 1.0 1.0 1.0]`.
 
 A literal on its own line (`%a = 3`) is typed there, by the last column, so `%a` is `i32`. A float literal's value is rounded to the nearest `f32` when parsed (`0.1` becomes `0.100000001490116…`).
 
@@ -121,6 +121,8 @@ Your interpreter and the code you generate must agree bit for bit (except NaN pa
 | `cast` to `bool` | `x != 0` | tinygrad rewrites it this way |
 | `cast` from `bool` | `false` is 0, `true` is 1 | C's conversion |
 | `recip` | `f32` only (`cast` an `i32` first); `recip 0.0` is `inf`, `recip -0.0` is `-inf` | tinygrad's op spec rejects `recip` on ints |
+| ALU ops on rank-1 values (chapter 4) | element by element, each element by the rules above | the syllabus: "ALU can be rank 1 now" |
+| `reduce` (chapter 4) | starts from the identity (`add`: 0; `mul`: 1; `max`: −2147483648 for `i32`, `-inf` for `f32`) and combines the elements in index order, each step by the rules above | tinygrad's `lower_reduce`; `f32` addition is not associative, so the order is part of the result |
 | Undefined: tests never do these, not even in the branch a `where` does not pick | `div`/`mod` by zero; `div`/`mod` of −2147483648 by −1; `shl` by < 0 or ≥ 32; `max` with a NaN, or of `0.0` and `-0.0`; `cast` `f32` → `i32` of NaN, ±inf or out-of-range values | C leaves them undefined, or C and Python disagree |
 
 ### Bounds
@@ -138,6 +140,8 @@ Your interpreter and the code you generate must agree bit for bit (except NaN pa
 | `RANGE` (chapter 3) | `[0, end − 1]`; the end is a constant ≥ 1 |
 | `AFTER` (chapter 2) | The value's bounds |
 | `LOAD` (chapter 2) | The dtype's full range |
+| `EXPAND` (chapter 4) | The source's bounds |
+| `REDUCE`, `STAGE` (chapter 4) | The dtype's full range: a STAGE is read back from memory when compiled |
 | `ADD` | `[a0 + b0, a1 + b1]` |
 | `MUL` | Smallest to largest of the four products of ends |
 | `MAX` | `[max(a0, b0), max(a1, b1)]` |
@@ -150,7 +154,7 @@ Your interpreter and the code you generate must agree bit for bit (except NaN pa
 | `CAST` `i32` → `bool` | `[0, 0]` if the source is `[0, 0]`; `[1, 1]` if 0 is outside the source's bounds; else `[0, 1]` |
 | Anything else | The dtype's full range |
 
-An `i32` result whose interval leaves the `i32` range widens to the full `i32` range. *Why:* the spec types bounds as `tuple[int, int]`. The rules are tinygrad's (`tinygrad/uop/ops.py`, `_min_max`), trimmed to the course's ops. tinygrad's bounds assume signed overflow never happens; because this course defines overflow to wrap, it must widen.
+An `i32` result whose interval leaves the `i32` range widens to the full `i32` range. *Why:* the spec types bounds as `tuple[int, int]`. The rules are tinygrad's (`tinygrad/uop/ops.py`, `_min_max`), trimmed to the course's ops, except STAGE: tinygrad passes its source's bounds through, and the course widens them because a staged value is read back from memory (chapter 4). tinygrad's bounds assume signed overflow never happens; because this course defines overflow to wrap, it must widen.
 
 ### Validation
 
@@ -198,6 +202,8 @@ Each chapter introduces the ops of one syllabus week and defines them; this tabl
 | 2 | `after` | value, then the effects it waits for | | [2](02-memory-and-shape/README.md#ops-introduced) |
 | 3 | `range` | end | `slot` | [3](03-loops/README.md#ops-introduced) |
 | 3 | `end` | effect, range | | [3](03-loops/README.md#ops-introduced) |
-| 4 | `reduce` `stage` `expand` | | | not written yet |
+| 4 | `reduce` | value | `op` `pop` | [4](04-rangeify/README.md#ops-introduced) |
+| 4 | `expand` | value, shape: `[]` or `n` | | [4](04-rangeify/README.md#ops-introduced) |
+| 4 | `stage` | value | | [4](04-rangeify/README.md#ops-introduced) |
 | 5 | `reshape` `permute` `pad` | | | not written yet |
 | 6 | `gradient` `detach` | | | not written yet |

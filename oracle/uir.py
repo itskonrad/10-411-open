@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
-"""Reference interpreter ("oracle") for UIR, weeks 1-3 of the course.
+"""Reference interpreter ("oracle") for UIR, weeks 1-4 of the course.
 
-  python3 -I oracle/uir.py FILE.uir [FILE.uir ...]
+  python3 -I oracle/uir.py [--lowered] FILE.uir [FILE.uir ...]
+
+--lowered also rejects what rangeify must remove (chapter 4): REDUCE, EXPAND, STAGE and rank-1 ALU ops.
 
 prints `PASS file`, `FAIL file: <why>` (the assert does not hold) or `ERROR file:line: <kind>: <why>` (the program is
 invalid, or does something undefined), and exits non-zero unless every file passes.
 
 Pipeline: tokens -> hash-consed UOps, each checked as it is built -> whole-program checks -> evaluation -> ASSERT.
 Comments name the source of each rule: [uir.md <section>], [ch1] chapter 1, [spec] syllabus/syllabus.md,
-[notes] the weeks 1–3 research notes (kept outside the repo), [oracle] a decision listed in oracle/README.md.
+[ch4] chapter 4, [notes] the research notes (kept outside the repo), [oracle] a decision listed in oracle/README.md.
 """
 from __future__ import annotations
 import math, re, struct, sys
@@ -31,13 +33,17 @@ BINARY: dict[str, Callable[[Any, Any], Any]] = {  # floor // and %, like uir.md 
 }
 OPS = {"const", "param", "call", "stack", "index", "assert", *ALU_OPS,      # week 1
        "buffer", "alloc", "shrink", "load", "store", "after",               # week 2
-       "range", "end"}                                                      # week 3
+       "range", "end",                                                      # week 3
+       "reduce", "stage", "expand"}                                         # week 4
 ARITY = {"param": 1, "buffer": 1, "alloc": 1, "cast": 1, "recip": 1, "where": 3, "assert": 2, "shrink": 3,
-         "load": 1, "store": 2, "range": 1, "end": 2, **{op: 2 for op in BINARY}}
+         "load": 1, "store": 2, "range": 1, "end": 2, "reduce": 1, "stage": 1, "expand": 2, **{op: 2 for op in BINARY}}
 MIN_ARITY = {"call": 1, "index": 2, "after": 2}
 ARG_KEYS = {"param": {"slot", "dtype"}, "buffer": {"slot", "dtype"}, "alloc": {"slot", "dtype"},
-            "cast": {"dtype"}, "range": {"slot"}}
+            "cast": {"dtype"}, "range": {"slot"}, "reduce": {"op", "pop"}}
+REDUCE_OPS = ("add", "mul", "max")  # tinygrad's GroupOp.Reduce [ch4]
 LITERALS_MATCH = {*BINARY, "assert", "store", "stack"}  # ops whose sources must match [uir.md Literals]
+
+LOWERED = False  # --lowered: the program must be rangeified [ch4]
 
 class UIRError(Exception):
   """An invalid program, or undefined behaviour found while running it."""
@@ -111,12 +117,14 @@ def check(u: UOp) -> None:
   if len(u.src) < MIN_ARITY.get(u.op, 0): fail(u, "op", f"{u.op} takes at least {MIN_ARITY[u.op]} sources")
   for s in u.src:
     if s.op == "assert": fail(u, "root", "assert is only allowed as the root [uir.md Programs and ASSERT]")
-    if s.op == "stack" and not s.src and u.op not in ("param", "buffer", "alloc"):
-      fail(u, "shape", "[] is only a shape, for param, buffer and alloc [oracle]")
+    if s.op == "stack" and not s.src and u.op not in ("param", "buffer", "alloc", "expand"):
+      fail(u, "shape", "[] is only a shape, for param, buffer, alloc and expand [oracle]")
   u.ranges = frozenset().union(*(s.ranges for s in u.src))
   u.ended = frozenset().union(*(s.ended for s in u.src))
   u.params = frozenset().union(*(s.params for s in u.src))
   (check_alu if u.op in ALU_OPS else CHECKS[u.op])(u)
+  if LOWERED and (u.op in ("reduce", "expand", "stage") or (u.op in ALU_OPS and u.shape)):
+    fail(u, "lowered", f"{u.op} of shape {u.shape} is left for rangeify to lower [ch4]")
   if u.ranges & u.ended: fail(u, "range", "uses a loop's RANGE after its END [notes ranges]")
 
 def check_const(u: UOp) -> None:
@@ -129,7 +137,7 @@ def check_stack(u: UOp) -> None:
   if not u.src: u.shape = (0,); return  # the empty shape `[]`, checked by its user
   for s in u.src:
     if s.op == "stack": fail(u, "rank", "rank 2 stacks arrive in week 5 [spec week 4]")
-    if s.op != "const": fail(u, "stack", "stack inputs must be constants until week 4 [spec week 1]")
+    if s.op != "const": fail(u, "stack", "stack inputs must be constants until week 5 [spec week 1, week 5; ch4 Spec notes]")
   u.dtype, u.shape = same_dtype(u, u.src), (len(u.src),)
   if u.dtype != "f32": u.bounds = (min(s.bounds[0] for s in u.src), max(s.bounds[1] for s in u.src))
 
@@ -140,17 +148,22 @@ def same_dtype(u: UOp, srcs: tuple[UOp, ...]) -> str:
   return srcs[0].dtype
 
 def need_value(u: UOp, s: UOp, what: str) -> None:
-  """`s` must be a rank-0 ALU value [spec week 1 'ALU ops must be rank 0', spec week 2 addrspace]."""
+  """`s` must be an ALU value [spec week 2 addrspace]."""
+  if s.op == "stack" and not s.src: fail(u, "shape", f"{what} is [], which is only a shape [oracle]")
   if s.dtype == "void": fail(u, "dtype", f"{what} has no value (it is an effect)")
   if s.space != "ALU": fail(u, "addrspace", f"{what} is GLOBAL memory: load it first [spec week 2]")
-  if s.shape != (): fail(u, "rank", f"{what} has shape {s.shape}; ALU ops are rank 0 [spec week 1]")
 
 def need_index(u: UOp, s: UOp, what: str) -> None:
   need_value(u, s, what)
+  if s.shape != (): fail(u, "rank", f"{what} has shape {s.shape}; an index is rank 0 [spec week 1]")
   if s.dtype != "i32": fail(u, "dtype", f"{what} must be i32, not {s.dtype} [uir.md Literals]")
 
 def check_alu(u: UOp) -> None:
+  """ALU ops are elementwise; from week 4 they may be rank 1, with every source of one shape [spec week 4, ch4]."""
   for i, s in enumerate(u.src): need_value(u, s, f"source {i} of {u.op}")
+  if len({s.shape for s in u.src}) > 1:
+    fail(u, "shape", f"{u.op} of shapes {' and '.join(str(s.shape) for s in u.src)}: broadcast with expand [ch4]")
+  u.shape = u.src[0].shape
   if u.op == "cast": u.dtype = u.arg
   elif u.op == "where":
     if u.src[0].dtype != "bool": fail(u, "dtype", "where's condition must be bool [ch1]")
@@ -196,12 +209,15 @@ def fold(u: UOp) -> tuple[int, int]:
   except UIRError: return full_bounds(u.dtype)  # undefined; running the program reports it
   return (v, v)
 
+def shape_src(u: UOp, s: UOp) -> tuple[int, ...]:
+  """A shape source: `[]` for (), or a length n for (n,) [uir.md Ops by chapter]."""
+  if s.op == "stack" and not s.src: return ()
+  if is_length(s): return (s.arg,)
+  fail(u, "shape", f"{u.op}'s shape must be [] or a length")
+
 def check_define(u: UOp) -> None:
-  """PARAM, BUFFER, ALLOC: src is the shape, `[]` or a length; arg is (slot, dtype) [uir.md Ops by week]."""
-  shape = u.src[0]
-  if shape.op == "stack" and not shape.src: u.shape = ()
-  elif is_length(shape): u.shape = (shape.arg,)
-  else: fail(u, "shape", f"{u.op}'s shape must be [] or a length")
+  """PARAM, BUFFER, ALLOC: src is the shape; arg is (slot, dtype)."""
+  u.shape = shape_src(u, u.src[0])
   u.dtype = u.arg[1]
   if u.op == "param": u.params, u.bounds = frozenset({u}), full_bounds(u.dtype)
   else: u.space = "GLOBAL"
@@ -286,6 +302,28 @@ def check_call(u: UOp) -> None:
   u.params = frozenset().union(*(a.params for a in args))
   u.ended = frozenset().union(*(a.ended for a in args))
 
+def check_reduce(u: UOp) -> None:
+  """REDUCE(x) op=add|mul|max pop=n: combines the n leading axes of x into one value per remaining element [spec week 4]."""
+  x, (op, pop) = u.src[0], u.arg
+  need_value(u, x, "reduce's source")
+  if pop > len(x.shape): fail(u, "shape", f"reduce pops {pop} axes from shape {x.shape} [ch4]")
+  if x.dtype not in ALU_DTYPES[op]: fail(u, "dtype", f"reduce op={op} does not take {x.dtype} [ch1 ALU table]")
+  u.dtype, u.shape, u.bounds = x.dtype, x.shape[pop:], full_bounds(x.dtype)  # [uir.md Bounds]
+
+def check_expand(u: UOp) -> None:
+  """EXPAND(x, shape): x repeated along new leading axes [spec week 4, ch4]."""
+  x = u.src[0]
+  need_value(u, x, "expand's source")
+  if x.shape: fail(u, "rank", f"expand of shape {x.shape}: its source is rank 0 until week 5 [spec week 4, ch4]")
+  u.shape = shape_src(u, u.src[1])
+  u.dtype, u.bounds = x.dtype, x.bounds
+
+def check_stage(u: UOp) -> None:
+  """STAGE(x): the value x, kept in a temp buffer when compiled [spec week 4, ch4]. Its bounds are those of a value
+  loaded back from memory, the dtype's full range [uir.md Bounds]."""
+  need_value(u, u.src[0], "stage's source")
+  u.dtype, u.shape, u.bounds = u.src[0].dtype, u.src[0].shape, full_bounds(u.src[0].dtype)
+
 def check_assert(u: UOp) -> None:
   for s in u.src:
     if s.dtype == "void": fail(u, "dtype", "assert compares values, not effects")
@@ -295,7 +333,8 @@ def check_assert(u: UOp) -> None:
 CHECKS = {"const": check_const, "stack": check_stack, "param": check_define, "buffer": check_define,
           "alloc": check_define, "index": check_index, "shrink": check_shrink, "load": check_load,
           "store": check_store, "after": check_after, "range": check_range, "end": check_end,
-          "call": check_call, "assert": check_assert}
+          "call": check_call, "assert": check_assert, "reduce": check_reduce, "expand": check_expand,
+          "stage": check_stage}
 
 # ***** whole-program checks, on the graph the root reaches [uir.md Validation] *****
 
@@ -413,13 +452,18 @@ class Parser:
     """Sources up to a closing bracket, a key= or the next line, and whether each is inline (a literal or [stack])."""
     srcs, inline = [], []
     while not self.at_end() and not self.peek().endswith("="):
-      inline.append(self.peek() == "[" or literal(self.peek()) is not None)
+      inline.append(self.peek() == "[" or literal(self.peek()) is not None or self.inline_expand())
       srcs.append(self.value(names))
     return tuple(srcs), inline
 
+  def inline_expand(self) -> bool:
+    """`(expand <literal> ...)` is matched like its literal [uir.md Literals]."""
+    t = [tok.text for tok in self.toks[self.pos:self.pos + 3]]
+    return len(t) == 3 and t[:2] == ["(", "expand"] and literal(t[2]) is not None
+
   def expr(self, names: dict[str, UOp], op: Token, close: str | None) -> UOp:
     if op.text not in OPS:
-      raise UIRError(op.line, "op", f"unknown op {op.text!r} (weeks 1-3 have {' '.join(sorted(OPS - {'const'}))})")
+      raise UIRError(op.line, "op", f"unknown op {op.text!r} (weeks 1-4 have {' '.join(sorted(OPS - {'const'}))})")
     srcs, inline = self.sources(names)
     kv: dict[str, Any] = {}
     while not self.at_end():
@@ -468,15 +512,18 @@ class Parser:
     typed = [s.dtype for s, lit in zip(srcs, inline) if not lit] or [s.dtype for s in srcs]
     dtype = "f32" if "f32" in typed else typed[0]
     for s, lit in zip(srcs, inline):  # only an inline literal adopts a dtype; a named one is already typed
-      if lit and dtype == "i32" and s.op == "const" and s.dtype == "f32":
-        raise UIRError(line, "dtype", f"float literal {show(s.arg)} cannot be i32 [uir.md Literals]")
+      if lit and dtype == "i32" and s.op in ("const", "expand") and s.dtype == "f32":
+        raise UIRError(line, "dtype", f"float literal {show(lit_value(s))} cannot be i32 [uir.md Literals]")
     return tuple(self.as_dtype(s, dtype, line) if lit else s for s, lit in zip(srcs, inline))
 
   def as_dtype(self, u: UOp, dtype: str | None, line: int) -> UOp:
     if dtype != "f32" or u.dtype != "i32": return u
     if u.op == "const": return self.build("const", (), f32(float(u.arg)), line)
     if u.op == "stack": return self.build("stack", tuple(self.as_dtype(s, dtype, line) for s in u.src), None, line)
+    if u.op == "expand": return self.build("expand", (self.as_dtype(u.src[0], dtype, line), u.src[1]), None, line)
     return u
+
+def lit_value(u: UOp) -> Any: return u.arg if u.op == "const" else u.src[0].arg
 
 def make_arg(op: Token, kv: dict[str, Any]) -> Any:
   """Each op has a fixed set of keys [uir.md Arguments]; all of them are required."""
@@ -487,6 +534,12 @@ def make_arg(op: Token, kv: dict[str, Any]) -> Any:
     raise UIRError(op.line, "arg", f"slot must be an integer >= 0, got {kv['slot']!r}")
   if "dtype" in kv and kv["dtype"] not in DTYPES:
     raise UIRError(op.line, "arg", f"dtype must be one of {' '.join(DTYPES)}, got {kv['dtype']!r}")
+  if op.text == "reduce":
+    if kv["op"] not in REDUCE_OPS:
+      raise UIRError(op.line, "arg", f"reduce op must be one of {' '.join(REDUCE_OPS)}, got {kv['op']!r}")
+    if type(kv["pop"]) is not int or kv["pop"] < 0:
+      raise UIRError(op.line, "arg", f"pop must be an integer >= 0, got {kv['pop']!r}")
+    return (kv["op"], kv["pop"])
   if op.text == "cast": return kv["dtype"]
   if op.text == "range": return kv["slot"]
   return (kv["slot"], kv["dtype"]) if kv else None
@@ -551,6 +604,10 @@ class Frame:
     if u.op == "load": return read(u, vals[0])
     if u.op == "store": return write(*vals)
     if u.op == "assert": return check_equal(u, *(read(u, v) if isinstance(v, View) else v for v in vals))
+    if u.op == "stage": return vals[0]
+    if u.op == "expand": return [vals[0]] * u.shape[0] if u.shape != u.src[0].shape else vals[0]
+    if u.op == "reduce": return reduce(u, vals[0])
+    if u.shape: return [alu(u, list(elems)) for elems in zip(*vals)]  # elementwise [ch4]
     return alu(u, vals)
 
 def read(u: UOp, v: View) -> Any:
@@ -568,14 +625,25 @@ def alu(u: UOp, vals: list[Any]) -> Any:
   if u.op == "cast": return cast(u, vals[0])
   if u.op == "where": return vals[1] if vals[0] else vals[2]
   if u.op == "recip": return f32(1 / vals[0]) if vals[0] != 0 else math.copysign(math.inf, vals[0])
-  a, b = vals
-  if u.op in ("div", "mod") and (b == 0 or (a, b) == (I32_MIN, -1)): undefined(u, f"{u.op} {a} {b}")
-  if u.op == "shl" and not 0 <= b < 32: undefined(u, f"shl by {b}")
-  if u.op == "max" and u.dtype == "f32":
+  return binary(u, u.op, *vals)
+
+def binary(u: UOp, op: str, a: Any, b: Any) -> Any:
+  if op in ("div", "mod") and (b == 0 or (a, b) == (I32_MIN, -1)): undefined(u, f"{op} {a} {b}")
+  if op == "shl" and not 0 <= b < 32: undefined(u, f"shl by {b}")
+  if op == "max" and u.dtype == "f32":
     if math.isnan(a) or math.isnan(b) or (a == b == 0 and math.copysign(1, a) != math.copysign(1, b)):
       undefined(u, f"max {a} {b}")
-  r = BINARY[u.op](a, b)
+  r = BINARY[op](a, b)
   return wrap32(r) if u.dtype == "i32" else f32(r) if u.dtype == "f32" else r
+
+def reduce(u: UOp, x: Any) -> Any:
+  """Fold the popped axis from the identity, in index order, as the lowered loop does [ch4]."""
+  op, pop = u.arg
+  if pop == 0: return x
+  acc = {"add": 0, "mul": 1, "max": I32_MIN if u.dtype == "i32" else -math.inf}[op]
+  if u.dtype == "f32": acc = float(acc)
+  for v in x: acc = binary(u, op, acc, v)
+  return acc
 
 def cast(u: UOp, v: Any) -> Any:
   if u.dtype == "bool": return v != 0
@@ -615,8 +683,10 @@ def run(text: str) -> Outcome:
   return Outcome("PASS")
 
 def main(paths: list[str]) -> int:
+  global LOWERED
+  if paths[:1] == ["--lowered"]: LOWERED, paths = True, paths[1:]
   if not paths:
-    print("usage: python3 -I oracle/uir.py FILE.uir [FILE.uir ...]", file=sys.stderr)
+    print("usage: python3 -I oracle/uir.py [--lowered] FILE.uir [FILE.uir ...]", file=sys.stderr)
     return 2
   outcomes = []
   for path in paths:

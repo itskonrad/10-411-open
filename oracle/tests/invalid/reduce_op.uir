@@ -1,0 +1,4 @@
+# expect: arg
+# REDUCE combines with add, mul or max.
+%s    = reduce [1 2 3] op=xor pop=1
+%test = assert %s 0

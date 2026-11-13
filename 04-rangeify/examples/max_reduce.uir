@@ -1,0 +1,6 @@
+# REDUCE with op=max starts from the smallest i32, so negative inputs work too.
+# max(-5, -1, -7, -2) = -1.
+%x    = buffer 4 slot=0 dtype=i32
+%sx   = store %x [-5 -1 -7 -2]
+%m    = reduce (load (after %x %sx)) op=max pop=1
+%test = assert %m -1

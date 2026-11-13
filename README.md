@@ -24,6 +24,9 @@ My unofficial, self-study version of CMU's 10-411 ([course page](https://10-411.
    - [Lesson 2: ordering the ranges](03-loops/README.md#lesson-2-ordering-the-ranges)
    - [Lesson 3: gemms and convs](03-loops/README.md#lesson-3-gemms-and-convs)
 4. [Rangeify](04-rangeify/README.md)
+   - [Lesson 1: broadcasting and reduction](04-rangeify/README.md#lesson-1-broadcasting-and-reduction)
+   - [Lesson 2: rangeify](04-rangeify/README.md#lesson-2-rangeify)
+   - [Lesson 3: kernel fusion and fission](04-rangeify/README.md#lesson-3-kernel-fusion-and-fission)
 5. [Movement ops](05-movement-ops/README.md)
 6. [Autodiff & speed](06-autodiff-and-speed/README.md)
 7. [GPUs](07-gpus/README.md)
@@ -54,7 +57,7 @@ git -C tinygrad checkout 07821caeade16a3e954f28af9263666ab0c1bd53
 
 | Status | Chapters |
 |--------|----------|
-| Done | 0 Prerequisites, 1 UOps & rewrites, 2 Memory & shape, 3 Loops, plus the UIR reference and the oracle for chapters 1–3 |
-| To do | 4 Rangeify, 5 Movement ops, 6 Autodiff & speed, 7 GPUs, 8 Memory hierarchies, 9 Real models, 10 Student projects |
+| Done | 0 Prerequisites, 1 UOps & rewrites, 2 Memory & shape, 3 Loops, 4 Rangeify, plus the UIR reference and the oracle for chapters 1–4 |
+| To do | 5 Movement ops, 6 Autodiff & speed, 7 GPUs, 8 Memory hierarchies, 9 Real models, 10 Student projects |
 
 The syllabus is still a draft. This page and the chapters will be updated as it gets refined.

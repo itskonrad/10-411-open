@@ -1,0 +1,4 @@
+# A rank-1 PARAM reduced inside a call body; two calls, two sums: 6 + 15 = 21.
+%v    = param 3 slot=0 dtype=i32
+%sum  = reduce %v op=add pop=1
+%test = assert (add (call %sum [1 2 3]) (call %sum [4 5 6])) 21

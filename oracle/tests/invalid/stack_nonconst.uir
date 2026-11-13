@@ -1,5 +1,5 @@
 # expect: stack
-# Until week 4, STACK inputs are constants (spec week 1).
+# Until week 5, STACK inputs are constants (spec week 1 says "until week 4"; the course follows week 5).
 %p    = param [] slot=0 dtype=i32
 %v    = [%p 2]
 %test = assert (call (index %v 0) 1) 1

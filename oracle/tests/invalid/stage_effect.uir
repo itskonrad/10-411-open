@@ -1,0 +1,5 @@
+# expect: dtype
+# STAGE keeps a value; a store has none.
+%b    = buffer [] slot=0 dtype=i32
+%s    = stage (store %b 1)
+%test = assert (load (after %b %s)) 1

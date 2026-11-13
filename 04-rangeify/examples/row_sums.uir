@@ -1,0 +1,10 @@
+# A chapter 3 loop over the rows of a 2x3 matrix, and a REDUCE over each row's window.
+# rows [1 2 3] and [4 5 6]: sums 6 and 15.
+%m    = buffer 6 slot=0 dtype=i32
+%out  = buffer 2 slot=1 dtype=i32
+%sm   = store %m [1 2 3 4 5 6]
+%i    = range 2 slot=0
+%row  = load (shrink (after %m %sm) (mul %i 3) 3)
+%s    = store (index %out %i) (reduce %row op=add pop=1)
+%done = end %s %i
+%test = assert (after %out %done) [6 15]

@@ -1,0 +1,4 @@
+# expect: dtype
+# An inline expand of a float literal is matched like the literal: next to an i32 value it is an error.
+%v    = [1 2]
+%test = assert (add %v (expand 0.5 2)) [1 2]

@@ -1,0 +1,8 @@
+# A rank-1 ALU expression stored to a buffer: y = x * 0.5 + 1, one loop when compiled.
+# x = [1 2 3 4]: [0.5 1 1.5 2] + 1 = [1.5 2 2.5 3].
+%x    = buffer 4 slot=0 dtype=f32
+%y    = buffer 4 slot=1 dtype=f32
+%sx   = store %x [1 2 3 4]
+%v    = add (mul (load (after %x %sx)) (expand 0.5 4)) (expand 1 4)
+%sy   = store %y %v
+%test = assert (after %y %sy) [1.5 2 2.5 3]

@@ -1,0 +1,4 @@
+# %v is asked for at three indices, but it feeds indices, so a compiler must recompute it, not stage it
+# (a staged value loses its bounds). v = [0 1 2]: 30 + 5 = 35.
+%v    = add [0 1 2] (expand 0 3)
+%test = assert (add (index [10 20 30] (index %v 2)) (index [5 6 7] (index %v 0))) 35

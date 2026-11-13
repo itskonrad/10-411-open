@@ -1,0 +1,3 @@
+# max over f32 starts from -inf, so an all-negative input gives its largest element.
+%m    = reduce [-3.5 -1.5 -2.0] op=max pop=1
+%test = assert %m -1.5

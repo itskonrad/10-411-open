@@ -1,0 +1,4 @@
+# An inline (expand 1 2) next to an f32 value is f32, like the literal 1 would be.
+%x    = buffer 2 slot=0 dtype=f32
+%sx   = store %x [0.5 2.5]
+%test = assert (add (load (after %x %sx)) (expand 1 2)) [1.5 3.5]

@@ -34,6 +34,15 @@ class TestOracle(unittest.TestCase):
         self.assertEqual(outcome.kind, expect[1], outcome.report(path.name))
         if expect[2]: self.assertIn(expect[2], outcome.message)
 
+  def test_lowered_flag(self):
+    uir.LOWERED = True
+    try:
+      self.assertEqual(uir.run("%test = assert (reduce [1 2] op=add pop=1) 3").kind, "lowered")
+      self.assertEqual(uir.run("%test = assert (add [1 2] [1 1]) [2 3]").kind, "lowered")
+      self.assertEqual(uir.run("%test = assert (index [1 2] 1) 2").status, "PASS")
+    finally:
+      uir.LOWERED = False
+
   def test_f32_rounding(self):
     self.assertEqual(uir.f32(0.1), 0.10000000149011612)
     self.assertEqual(uir.f32(16777217.0), 16777216.0)  # ties to even

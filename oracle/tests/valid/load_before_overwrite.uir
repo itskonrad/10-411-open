@@ -1,0 +1,11 @@
+# A rank-1 load used before and after its buffer is overwritten: both uses see the old [1 2 3].
+# Compiled, the load must be materialized (chapter 4, Lesson 3).
+%x    = buffer 3 slot=0 dtype=i32
+%y    = buffer 3 slot=1 dtype=i32
+%z    = buffer 3 slot=2 dtype=i32
+%sx   = store %x [1 2 3]
+%v    = load (after %x %sx)
+%sy   = store %y %v
+%s2   = store (after %x %sy) [7 7 7]
+%sz   = store (after %z %s2) %v
+%test = assert (after %z %sz) [1 2 3]

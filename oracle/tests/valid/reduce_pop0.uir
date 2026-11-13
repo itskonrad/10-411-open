@@ -1,0 +1,2 @@
+# pop=0 reduces no axes: the value is unchanged.
+%test = assert (reduce [4 5] op=mul pop=0) [4 5]

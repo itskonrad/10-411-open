@@ -1,11 +1,12 @@
-# UIR oracle (chapters 1–3)
+# UIR oracle (chapters 1–4)
 
-A reference interpreter for UIR programs of chapters 1–3. It decides whether a test program is valid and whether its assert holds. It is slow and simple on purpose: it is a reference, not a compiler. It does no rewriting, no rendering and no optimisation, and does not compute `cost`.
+A reference interpreter for UIR programs of chapters 1–4. It decides whether a test program is valid and whether its assert holds. It is slow and simple on purpose: it is a reference, not a compiler. It does no rewriting, no rendering and no optimisation, and does not compute `cost`.
 
 ## Running it
 
 ```sh
 python3 -I oracle/uir.py FILE.uir [FILE.uir ...]   # one line per file, exit status 1 unless all pass
+python3 -I oracle/uir.py --lowered FILE.uir       # also ERROR if rangeify left anything to lower (chapter 4)
 python3 -I oracle/test_oracle.py                   # the oracle's own tests
 ```
 
@@ -13,7 +14,7 @@ Each file prints one of:
 
 - `PASS file`
 - `FAIL file: line N: got X, expected Y`: a valid program whose assert does not hold.
-- `ERROR file:line: kind: reason`: an invalid program, or one that does something undefined. `kind` is one of `parse`, `op`, `arg`, `dtype`, `shape`, `rank`, `stack`, `bounds`, `addrspace`, `order`, `call`, `range`, `root` and `undefined`. Two more kinds are not about the program: `file` (it cannot be read) and `limit` (the graph is too deep for Python's recursion).
+- `ERROR file:line: kind: reason`: an invalid program, or one that does something undefined. `kind` is one of `parse`, `op`, `arg`, `dtype`, `shape`, `rank`, `stack`, `bounds`, `addrspace`, `order`, `call`, `range`, `root`, `undefined` and, with `--lowered`, `lowered` (a REDUCE, EXPAND, STAGE or rank-1 ALU op is left). Two more kinds are not about the program: `file` (it cannot be read) and `limit` (the graph is too deep for Python's recursion).
 
 Python 3 standard library only (tested with 3.12.3). `test_oracle.py` runs every chapter's `examples/*.uir` and `tests/valid/*.uir`, which must pass. It also runs `tests/invalid/*.uir`, which must be rejected. Each invalid test starts with `# expect: <kind>` or `# expect: <kind>: <part of the message>`. The kind `fail` means a valid program whose assert must fail.
 
@@ -40,11 +41,11 @@ In chapters 1 and 2 there are no loops, and the ordering check makes sure every 
 These are choices that uir.md, chapter 1 and the research notes leave open. Chapters 2 and 3 should state them, or the oracle should change.
 
 - **Inline literals.** Only literals written inline (a literal token, or `[...]`) take the dtype they must match. A `%name` bound to a literal is already typed. An inline stack converted to `f32` converts all its elements.
-- **INDEX** takes exactly one index, because shapes are at most rank 1. The index is a rank-0 `i32` ALU value. On memory, INDEX gives a rank-0 address. On a value (a stack, or a rank-1 PARAM or LOAD), it gives the element.
+- **INDEX** takes exactly one index, because shapes are at most rank 1. The index is a rank-0 `i32` ALU value. On memory, INDEX gives a rank-0 address. On a value (a stack, a rank-1 PARAM or LOAD, or from chapter 4 any rank-1 value), it gives the element.
 - **The all-sources-exact bounds row** applies to ALU ops only. If the op is undefined on those values (`div 1 0`), the bounds are the dtype's full range, and running the program reports the error.
-- **BUFFER and ALLOC are both GLOBAL** and start undefined. Chapters 1–3 have no way to load input data, so tests write their inputs with STOREs first. Reading an element that was never stored is `undefined`.
+- **BUFFER and ALLOC are both GLOBAL** and start undefined. Chapters 1–4 have no way to load input data, so tests write their inputs with STOREs first. Reading an element that was never stored is `undefined`.
 - **SHRINK(buffer, offset, size)** takes rank-1 memory only. The offset is a rank-0 `i32` and may be symbolic. The size is a constant ≥ 1. The window `[offset.vmin, offset.vmax + size − 1]` must lie in `[0, n − 1]`.
-- **LOAD of a rank-1 address** (a whole buffer or a SHRINK) gives a rank-1 ALU value. It can be indexed, stored or asserted, but no ALU op can use it.
+- **LOAD of a rank-1 address** (a whole buffer or a SHRINK) gives a rank-1 ALU value. It can be indexed, stored or asserted, but until chapter 4 no ALU op can use it.
 - **STORE.** The value is an ALU value (not memory, not an effect), and its shape equals the target's. A STORE has dtype `void` and shape `()`.
 - **AFTER's deps** are effects or RANGEs. An effect is `void`: a STORE, an END, or an AFTER of an effect. A RANGE dep is tinygrad's "inside loop r" idiom. AFTER's value may itself be an effect, which is how several stores become one effect for an END: `end (after %s2 %s1) %i`.
 - **END(effect, r).** The effect must be `void` and must use `r`. An effect that does not use `r` is loop-invariant, so it would run once (uir.md, Evaluation), while the END reads as "N times". The oracle rejects that ambiguity.
@@ -57,4 +58,10 @@ These are choices that uir.md, chapter 1 and the research notes leave open. Chap
 - **CALL.** A call passes exactly (highest PARAM slot + 1) arguments, so an unused slot below the highest still takes one. Every argument is an ALU value; memory and effects cannot be passed. The body is an ALU value with no open ranges, and it may contain its own loops and ALLOCs. Two different PARAMs with one slot in one body are an error. A CALL whose arguments use a range is evaluated once per iteration.
 - **ASSERT** reads memory contents when either side is memory, and every element it reads must be defined.
 - **Undefined behaviour** (uir.md, Arithmetic) is reported as `ERROR … undefined` when evaluation reaches it. This covers both branches of a WHERE, because both are evaluated. Constants alone never make a program invalid.
+- **STACK inputs** are constants through chapter 4: week 1 says "until week 4", week 5 says "STACK supports arbitrary inputs", and the course follows week 5.
+- **Rank-1 ALU ops (chapter 4)** need every source to have the same shape; nothing is broadcast implicitly. Indices and SHRINK offsets stay rank 0.
+- **EXPAND(value, shape)** takes a value (not memory, not an effect) and a shape source written like a BUFFER's, `[]` or a length. It adds its axes on the left; its source is rank 0 until week 5, so the result is at most rank 1. An inline `(expand <literal> …)` takes the dtype it must match, like its literal; a named one is typed where it is written.
+- **REDUCE(value) op= pop=** takes a value whose dtype its op takes (`add`, `mul`, `max` on `i32` and `f32`), and `0 ≤ pop ≤ rank`. It folds from the identity in index order; each step is checked for undefined behaviour like the ALU op. Its bounds are the dtype's full range.
+- **STAGE(value)** is the identity on values. It only matters to a compiler. Its bounds are the dtype's full range, like a value loaded from memory, which is what it becomes when compiled; so a staged value cannot be proven in range as an index.
+- **Whole values (chapter 4).** A rank-1 LOAD reads the whole address at its place in the order, and a rank-1 STORE writes the whole value. So a store whose value loads from its own target sees the old contents (`04-rangeify/examples/shift.uir`).
 - **Tokens.** Comments, `%name =`, `key=value`, nested `(op ...)` and `[stacks]` follow tinygrad's `uir.py`. The oracle rejects scoped blocks `{}` (chapter 6), backtick objects and `invalid`. Every key an op takes is required. Unknown keys and repeated keys are errors.

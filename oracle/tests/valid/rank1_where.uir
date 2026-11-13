@@ -1,0 +1,4 @@
+# WHERE and CMPLT are elementwise on rank-1 values: max(x, 2) without max.
+%x    = [1 5 2 0]
+%c    = expand 2 4
+%test = assert (where (cmplt %x %c) %c %x) [2 5 2 2]

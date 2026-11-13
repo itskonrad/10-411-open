@@ -1,0 +1,4 @@
+# expect: shape
+# A rank-1 value has one axis to pop, not two.
+%s    = reduce [1 2 3] op=add pop=2
+%test = assert %s 6

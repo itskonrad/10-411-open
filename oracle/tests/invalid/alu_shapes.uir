@@ -1,0 +1,4 @@
+# expect: shape
+# ALU sources must have one shape: a rank-0 value is not broadcast for you. Write (expand 1 2).
+%x    = add [1 2] 1
+%test = assert %x [2 3]

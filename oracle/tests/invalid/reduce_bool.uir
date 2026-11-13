@@ -1,0 +1,4 @@
+# expect: dtype
+# REDUCE takes the dtypes its op takes: add does not take bool.
+%s    = reduce [true false] op=add pop=1
+%test = assert %s true

@@ -1,0 +1,3 @@
+# expect: fail
+# A valid program whose assert does not hold: 1 + 2 + 3 is 6.
+%test = assert (reduce [1 2 3] op=add pop=1) 7

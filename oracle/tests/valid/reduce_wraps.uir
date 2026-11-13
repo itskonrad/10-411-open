@@ -1,0 +1,2 @@
+# i32 sums wrap like add: 2147483647 + 1 = -2147483648.
+%test = assert (reduce [2147483647 1] op=add pop=1) -2147483648

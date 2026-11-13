@@ -1,0 +1,6 @@
+# expect: addrspace
+# EXPAND repeats a value; a buffer must be loaded first.
+%b    = buffer [] slot=0 dtype=i32
+%s    = store %b 1
+%v    = expand (after %b %s) 3
+%test = assert (load %v) [1 1 1]

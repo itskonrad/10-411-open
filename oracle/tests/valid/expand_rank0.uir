@@ -1,0 +1,2 @@
+# expand by [] adds no axis: the value is unchanged.
+%test = assert (expand 9 []) 9

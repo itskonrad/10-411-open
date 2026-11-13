@@ -1,0 +1,8 @@
+# A dot product: an elementwise MUL, then a REDUCE over its only axis.
+# 1*4 + 2*5 + 3*6 = 4 + 10 + 18 = 32.
+%a    = buffer 3 slot=0 dtype=f32
+%b    = buffer 3 slot=1 dtype=f32
+%sa   = store %a [1 2 3]
+%sb   = store %b [4 5 6]
+%dot  = reduce (mul (load (after %a %sa)) (load (after %b %sb))) op=add pop=1
+%test = assert %dot 32

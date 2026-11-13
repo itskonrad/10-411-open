@@ -1,0 +1,4 @@
+# expect: rank
+# Expanding a rank-1 value would make a rank-2 shape; those arrive in week 5.
+%v    = expand [1 2] 3
+%test = assert (index (index %v 0) 1) 2
