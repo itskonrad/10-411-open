@@ -1,0 +1,5 @@
+# expect: root
+# assert is never an operand.
+%a = assert 1 1
+%x = add %a 1
+%test = assert %x 2

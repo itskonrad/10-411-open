@@ -51,6 +51,9 @@ try:
     raise AssertionError("an unordered load and store must be rejected")
 except TypeError:
     pass
+# f32 (this chapter): rounds after every op, overflows to inf; rounding once at the end is wrong
+assert f32(f32(16777216.0 + 1.0) + 1.0) == 16777216.0 and f32(16777216.0 + 1.0 + 1.0) == 16777218.0
+assert f32(1e40) == float("inf") and f32(-1e40) == float("-inf")
 print("chapter 2 snippet tests passed")
 
 # every other C block in the chapter is the renderer's output too

@@ -1,0 +1,7 @@
+# `stack 1 2` and `[1 2]` build the same node.
+%a    = stack 1 2
+%b    = [1 2]
+%x    = index %a 1
+%y    = index %b 1
+%s    = add %x %y
+%test = assert %s 4

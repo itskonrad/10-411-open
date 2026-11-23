@@ -1,0 +1,5 @@
+# The call passes arguments for slots 0 and 1, but the body uses only slot 0: unused slots are allowed.
+%x    = param [] slot=0 dtype=i32 addrspace=ALU
+%f    = add %x 1
+%r    = call %f 41 7
+%test = assert %r 42

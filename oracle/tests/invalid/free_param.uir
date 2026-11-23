@@ -1,4 +1,4 @@
 # expect: call: outside a call
 # A PARAM outside any call body has no value.
-%x    = param [] slot=0 dtype=i32
+%x    = param [] slot=0 dtype=i32 addrspace=ALU
 %test = assert (add %x 1) 1

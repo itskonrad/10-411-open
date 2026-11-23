@@ -47,13 +47,13 @@ for code in kernels:
     bufs = [((ctypes.c_float if t == "float" else ctypes.c_int32) * 16)() for t in params]
     assert compile_c(code).kernel(*bufs) == 1, code
 
-# --- every complete UIR program shown passes the oracle, or fails as its first comment says ---
+# --- every complete UIR program shown passes the oracle, or is a MISMATCH as its first comment says ---
 programs = [b for b in re.findall(r"^```text\n(.*?)^```$", README, re.DOTALL | re.MULTILINE) if "%test = assert" in b]
 assert len(programs) >= 8
 for n, text in enumerate(programs):
     (Path(f"shown{n}.uir")).write_text(text)
     out = subprocess.run([sys.executable, "-I", str(ROOT / "oracle" / "uir.py"), f"shown{n}.uir"],
                          capture_output=True, text=True).stdout
-    expected = "FAIL" if text.startswith("# FAIL") else "PASS"
-    assert out.startswith(expected), (text, out)
+    expected = "MISMATCH" if text.startswith("# MISMATCH") else "MATCH"
+    assert out.split()[0] == expected, (text, out)
 print("chapter 4 snippet tests passed")

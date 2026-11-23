@@ -1,0 +1,4 @@
+# expect: arg
+# Week 1 dtypes are i32 and bool.
+%x = cast 1 dtype=f32
+%test = assert %x 1

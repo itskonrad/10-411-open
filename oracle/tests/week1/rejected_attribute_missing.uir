@@ -1,0 +1,4 @@
+# expect: arg
+# cast needs dtype=.
+%x = cast 1
+%test = assert %x 1

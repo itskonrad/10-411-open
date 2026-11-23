@@ -1,0 +1,4 @@
+# expect: op
+# buffer arrives in week 2.
+%b = buffer 4 slot=0 dtype=i32
+%test = assert 1 1

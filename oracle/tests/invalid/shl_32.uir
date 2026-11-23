@@ -1,3 +1,0 @@
-# expect: undefined: shl
-# Shifting by 32 or more is undefined.
-%test = assert (shl 1 32) 0

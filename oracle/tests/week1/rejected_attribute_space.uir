@@ -1,0 +1,4 @@
+# expect: parse
+# key=value is one token, with no internal spaces.
+%x = cast 1 dtype= bool
+%test = assert %x true

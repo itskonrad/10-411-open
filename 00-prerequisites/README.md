@@ -58,7 +58,7 @@ If a few answers are wrong, the lessons and their exercises are enough. If most 
 **Working on a long project.** Every chapter's compiler must still pass every earlier chapter's tests, so set this up before chapter 1:
 
 - **Version control**, with a commit after each working step.
-- **One command that runs every test.** In this repo that is [tools/check_compiler.py](../tools/check_compiler.py): your compiler lives in [compiler/](../compiler/README.md), your tests in [tests/](../tests/README.md), and the checker compares your verdicts with the [oracle](../oracle/README.md) on every chapter's examples and every test you wrote. Chapter 1's [How to start](../01-uops-and-rewrites/README.md#how-to-start) walks through it.
+- **One command that runs every test.** In this repo that is [tools/check_compiler.py](../tools/check_compiler.py): your compiler lives in [compiler/](../compiler/README.md), your tests in [tests/](../tests/README.md), and the checker compares your outcomes with the [oracle](../oracle/README.md) on every chapter's examples and every test you wrote. Chapter 1's [How to start](../01-uops-and-rewrites/README.md#how-to-start) walks through it.
 - **The habit of deleting code.** When a later chapter makes code unnecessary, remove it. Complexity you add early slows every chapter after.
 
 ## Lessons

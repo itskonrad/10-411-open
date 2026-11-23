@@ -1,0 +1,3 @@
+# div x 0 is -1, never an error [week 1 reference].
+%q    = div 7 0
+%test = assert %q -1

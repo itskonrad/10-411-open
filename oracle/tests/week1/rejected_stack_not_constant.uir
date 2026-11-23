@@ -1,0 +1,7 @@
+# expect: stack
+# From the syllabus ("until week 4, inputs can only be STACK/CONST"), not from the released reference, whose table says "ALU inputs".
+%x = param [] slot=0 dtype=i32 addrspace=ALU
+%v = [%x 2]
+%f = index %v 1
+%r = call %f 1
+%test = assert %r 2

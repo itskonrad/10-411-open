@@ -1,0 +1,5 @@
+# Limits are literals of the param's dtype: for a bool they are false and true. not true is false.
+%b    = param [] [false true] slot=0 dtype=bool addrspace=ALU
+%n    = xor %b true
+%r    = call %n true
+%test = assert %r false

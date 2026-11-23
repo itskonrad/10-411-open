@@ -1,6 +1,6 @@
 # expect: range: both in a call body and outside
 # The loop %i is used outside the call (to index %out) and inside its body: a loop belongs to one scope.
-%x    = param [] slot=0 dtype=i32
+%x    = param [] slot=0 dtype=i32 addrspace=ALU
 %i    = range 3 slot=0
 %t    = alloc 3 slot=0 dtype=i32
 %f    = load (index (after %t (end (store (index %t %i) %x) %i)) 0)

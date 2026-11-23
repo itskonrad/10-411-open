@@ -1,0 +1,7 @@
+# expect: call
+# One param node per used slot: two different params with slot 0 in one body.
+%x = param [] slot=0 dtype=i32 addrspace=ALU
+%y = param [] slot=0 dtype=bool addrspace=ALU
+%z = where %y %x 0
+%r = call %z 1 true
+%test = assert %r 1

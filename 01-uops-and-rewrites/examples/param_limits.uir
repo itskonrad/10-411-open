@@ -1,0 +1,8 @@
+# A PARAM may carry limits [l h]: its bounds are then [0, 2] instead of all of i32.
+# So index [10 20 30] %i is safe for every call whose argument fits the limits.
+# Called with 1, the result is the element at index 1: 20.
+%i    = param [] [0 2] slot=0 dtype=i32 addrspace=ALU
+%v    = [10 20 30]
+%x    = index %v %i
+%r    = call %x 1
+%test = assert %r 20

@@ -1,0 +1,4 @@
+# expect: shape
+# ALU ops take scalars.
+%x = add [1 2] 1
+%test = assert 1 1

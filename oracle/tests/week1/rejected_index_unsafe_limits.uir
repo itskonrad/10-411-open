@@ -1,0 +1,7 @@
+# expect: bounds
+# The reference's box: limits [0 3] allow index 3, which is past the end.
+%i = param [] [0 3] slot=0 dtype=i32 addrspace=ALU
+%v = [10 20 30]
+%x = index %v %i
+%r = call %x 1
+%test = assert %r 20

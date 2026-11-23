@@ -1,0 +1,4 @@
+# expect: rank
+# Week 1 shapes have rank 0 or 1.
+%m = [[1 2] [3 4]]
+%test = assert 1 1

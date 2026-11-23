@@ -1,0 +1,3 @@
+# Floor quotient: -7 / 2 = -3.5 floors to -4.
+%q    = div -7 2
+%test = assert %q -4

@@ -1,0 +1,3 @@
+# a comment with a Unicode line separator,  and a form feed  inside: both are just comment text
+%sum  = add 2 3
+%test = assert %sum 5

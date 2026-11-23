@@ -2,9 +2,12 @@
 # Bounds: x is in [0, 99], so x*4 is in [0, 396] and cannot wrap; y mod 4 is in [0, 3].
 # So the remainder never carries into the quotient, and g simplifies to x.
 # Check with a = -3, y = 7: x = -3 mod 100 = 97 (floor), 97*4 + 7 mod 4 = 388 + 3 = 391, 391 div 4 = 97.
-%a    = param [] slot=0 dtype=i32
-%y    = param [] slot=1 dtype=i32
+%a    = param [] slot=0 dtype=i32 addrspace=ALU
+%y    = param [] slot=1 dtype=i32 addrspace=ALU
 %x    = mod %a 100
-%g    = div (add (mul %x 4) (mod %y 4)) 4
+%x4   = mul %x 4
+%y4   = mod %y 4
+%sum  = add %x4 %y4
+%g    = div %sum 4
 %r    = call %g -3 7
 %test = assert %r 97

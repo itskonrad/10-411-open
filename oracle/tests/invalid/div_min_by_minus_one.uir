@@ -1,3 +1,0 @@
-# expect: undefined: div
-# -2147483648 div -1 overflows.
-%test = assert (div -2147483648 -1) 0

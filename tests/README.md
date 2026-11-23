@@ -1,3 +1,3 @@
 # Your tests
 
-Put your own UIR tests here, for example `tests/chapter1/*.uir`: the syllabus asks for ten new tests each week, so write ten per chapter. Check that each one is valid and does what you expect with the oracle (`python3 -I oracle/uir.py tests/chapter1/*.uir`). `tools/check_compiler.py` runs every test in this folder.
+Put your own UIR tests here, for example `tests/chapter1/*.uir`: the syllabus asks for ten new tests each week, so write ten per chapter. A test's filename says what it should do, as in the course's released week 1 reference: no prefix for `MATCH`, `mismatch_`, `rejected_` or `overbudget_` for the other outcomes (for example `rejected_assert_dtype_mismatch.uir`). Check that each one does what its name says with the oracle (`python3 -I oracle/uir.py --week 1 tests/chapter1/*.uir`, with the week of the chapter). `tools/check_compiler.py` runs every test in this folder, and reports a test whose name the oracle disagrees with.

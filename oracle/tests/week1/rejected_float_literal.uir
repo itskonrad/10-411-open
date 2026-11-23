@@ -1,0 +1,4 @@
+# expect: parse
+# Week 1 has no float literals.
+%x = add 1 2.5
+%test = assert %x 3

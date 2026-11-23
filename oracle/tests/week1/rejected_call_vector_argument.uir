@@ -1,0 +1,6 @@
+# expect: rank
+# A week 1 call takes scalars.
+%x = param [] slot=0 dtype=i32 addrspace=ALU
+%f = add %x 1
+%r = call %f [1 2]
+%test = assert %r 2

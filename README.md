@@ -39,14 +39,14 @@ Reference: [the UIR format and conventions](uir.md).
 ## Doing the course
 
 1. Fork this repo and write your compiler in [compiler/](compiler/README.md), in any language.
-2. For each chapter, read it, write your own tests in [tests/](tests/README.md), and check them with the [oracle](oracle/README.md): `python3 -I oracle/uir.py tests/chapter1/*.uir`.
+2. For each chapter, read it, write your own tests in [tests/](tests/README.md), named by the outcome they should give (`rejected_…`, `mismatch_…`, `overbudget_…`, or no prefix for a match), and check them with the [oracle](oracle/README.md): `python3 -I oracle/uir.py --week 1 tests/chapter1/*.uir`.
 3. Extend your compiler until it agrees with the oracle on every example and test so far:
 
    ```sh
    python3 -I tools/check_compiler.py --chapter 1 -- <your compiler command>
    ```
 
-Where the syllabus is silent, the chapters follow [tinygrad](https://github.com/tinygrad/tinygrad) and say so. To read the tinygrad files they cite:
+Chapter 1 follows the course's released week 1 reference exactly (its grammar, outcomes and limits); where the reference and the syllabus differ, the reference wins and the chapter says so. Where both are silent, the chapters follow [tinygrad](https://github.com/tinygrad/tinygrad) and say so. To read the tinygrad files they cite:
 
 ```sh
 git clone https://github.com/tinygrad/tinygrad.git

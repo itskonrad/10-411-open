@@ -1,0 +1,4 @@
+# expect: dtype
+# add takes two operands of one dtype: an i32 and a bool do not mix.
+%x = add 1 true
+%test = assert %x 2

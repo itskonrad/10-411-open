@@ -1,0 +1,3 @@
+# mod x 0 is x: x - 0 * floor(x / 0) with floor(x / 0) = -1 gives x - 0 * -1 = x.
+%r    = mod 7 0
+%test = assert %r 7

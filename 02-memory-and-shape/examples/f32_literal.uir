@@ -1,0 +1,6 @@
+# An integer literal next to an f32 becomes an f32: in `add %x 1`, the 1 is 1.0.
+# The expected value 4 is matched to the f32 result too, so it means 4.0.
+# 3.0 + 1.0 = 4.0
+%x    = cast 3 dtype=f32
+%y    = add %x 1
+%test = assert %y 4

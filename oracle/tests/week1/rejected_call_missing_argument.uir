@@ -1,0 +1,6 @@
+# expect: call
+# Slot 1 is used, so the call needs arguments for slots 0 and 1.
+%y = param [] slot=1 dtype=i32 addrspace=ALU
+%f = add %y 1
+%r = call %f 1
+%test = assert %r 2

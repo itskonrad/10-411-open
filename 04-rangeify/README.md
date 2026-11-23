@@ -80,7 +80,7 @@ The lowering is called *rangeify*: it gives every value a `RANGE` for its axis, 
 
 ```text
                                       shapes          loops (chapter 3 UIR)
- .uir ─▶ parse, check ─▶ inline ─▶ rangeify ─▶ nest ─▶ render ─▶ cc ─▶ run ─▶ verdict
+ .uir ─▶ parse, check ─▶ inline ─▶ rangeify ─▶ nest ─▶ render ─▶ cc ─▶ run ─▶ outcome
                                        │
                                        └─▶ --emit-uir: print it, and check it with the oracle
 ```
@@ -100,7 +100,7 @@ Lesson 3 is about this decision. And the new checks reject what has no meaning:
 
 ```text
 $ mycc bad.uir          # %v = add [1 2 3] 1
-ERROR line 1: add of shapes (3,) and (): broadcast with expand
+REJECTED line 1: add of shapes (3,) and (): broadcast with expand
 ```
 
 ## How to start
@@ -113,7 +113,7 @@ You have a chapter 3 compiler: it checks loops, orders them with `nest`, renders
 - `EXPAND`, `REDUCE` and `STAGE` (Lesson 1).
 - The new checks ([Ops introduced](#ops-introduced)).
 
-First copy the oracle's tests for the new rules into `tests/chapter4/`, as your first tests: the [invalid](../oracle/tests/invalid/) ones give ERROR, the [valid](../oracle/tests/valid/) ones PASS.
+First copy the oracle's tests for the new rules into `tests/chapter4/`, as your first tests: the [invalid](../oracle/tests/invalid/) ones give REJECTED, the [valid](../oracle/tests/valid/) ones MATCH.
 
 ```sh
 mkdir -p tests/chapter4
@@ -131,7 +131,7 @@ Until rangeify handles a program, the default (compiled) mode fails on it: that 
 
 **Step 1: `--emit-uir`.** Add a mode that prints the graph your compiler is about to render, as UIR. Print one line per node in topological order, each node named after its position: `%n7 = add %n5 %n6`. Before rangeify exists, print the inlined graph.
 
-The point is that the oracle reads this output. A lowered program is a chapter 3 program, so the oracle can check the lowering itself, not just the final verdict. Its `--lowered` flag also rejects anything rangeify should have removed (a REDUCE, EXPAND or STAGE, or an ALU op on a rank-1 value), because an unlowered program is valid UIR too:
+The point is that the oracle reads this output. A lowered program is a chapter 3 program, so the oracle can check the lowering itself, not just the final outcome. Its `--lowered` flag also rejects anything rangeify should have removed (a REDUCE, EXPAND or STAGE, or an ALU op on a rank-1 value), because an unlowered program is valid UIR too:
 
 ```sh
 mkdir -p kernels
@@ -141,23 +141,23 @@ for f in 0[1-4]-*/examples/*.uir tests/*/*.uir; do
 done
 ```
 
-Each line looks like `PASS PASS 01-uops-and-rewrites/examples/add.uir`, and the two words must be the same. (`kernels/` is the runtime's cache folder, which git ignores.) For a program your compiler rejects, `--emit-uir` prints its ERROR line, the oracle cannot parse that, and the line reads `ERROR ERROR`: only the lines of valid programs say something about the lowering. Done when the words match for chapters 1–3; the chapter 4 examples say `PASS ERROR` until rangeify handles them.
+Each line looks like `MATCH MATCH 01-uops-and-rewrites/examples/add.uir`, and the two words must be the same. (`kernels/` is the runtime's cache folder, which git ignores.) For a program your compiler rejects, `--emit-uir` prints its REJECTED line, the oracle cannot parse that, and the line reads `REJECTED REJECTED`: only the lines of valid programs say something about the lowering. Done when the words match for chapters 1–3; the chapter 4 examples say `MATCH REJECTED` until rangeify handles them.
 
 Two details trip people up when printing UIR:
 
 - A literal on its own line takes its dtype from how it is written ([Literals inside EXPAND](#lesson-1-broadcasting-and-reduction) has the rule): print an `f32` constant with a decimal point (`%n3 = 1.0`), or it reads back as `i32`. The same goes for an `f32` stack used as a value: `[1.0 2.0]`, not `[1 2]`.
 - A rank-0 shape prints as `[]`, and an `i32` constant as a plain number.
 
-**Step 2: the thinnest slice.** Make [scale.uir](examples/scale.uir) compile: a rank-1 expression stored into a buffer. It needs only the elementwise part of rangeify, `elem` in [Lesson 2](#lesson-2-rangeify), and the rule that turns a rank-1 `STORE` into a loop. Done when its line in the loop above reads `PASS PASS`, and the compiled program passes.
+**Step 2: the thinnest slice.** Make [scale.uir](examples/scale.uir) compile: a rank-1 expression stored into a buffer. It needs only the elementwise part of rangeify, `elem` in [Lesson 2](#lesson-2-rangeify), and the rule that turns a rank-1 `STORE` into a loop. Done when its line in the loop above reads `MATCH MATCH`, and the compiled program passes.
 
 **Steps 3–6: grow it.**
 
 | Step | Add | Read | Done when |
 |------|-----|------|-----------|
-| 3 | `REDUCE` lowered to an accumulator loop, with its init inside the loops its source uses | Lesson 2 | [expand_add](examples/expand_add.uir), [dot](examples/dot.uir), [max_reduce](examples/max_reduce.uir), [center](examples/center.uir) and [row_sums](examples/row_sums.uir) pass compiled, and read `PASS PASS` in the loop |
+| 3 | `REDUCE` lowered to an accumulator loop, with its init inside the loops its source uses | Lesson 2 | [expand_add](examples/expand_add.uir), [dot](examples/dot.uir), [max_reduce](examples/max_reduce.uir), [center](examples/center.uir) and [row_sums](examples/row_sums.uir) pass compiled, and read `MATCH MATCH` in the loop |
 | 4 | `STAGE` and rank-1 asserts: compute the value into a temp `ALLOC` in a loop of its own | Lesson 3 | [stage_reuse](examples/stage_reuse.uir) passes both ways |
-| 5 | Materialize a rank-1 LOAD that a later store to its buffer depends on (the hazard) | Lesson 3 | [shift](examples/shift.uir) and the oracle's [load_before_overwrite](../oracle/tests/valid/load_before_overwrite.uir) (the cross-loop listing in Lesson 3) pass compiled and read `PASS PASS` in the loop; before this step, the oracle on shift's lowered UIR reports `got [1 1 1 1]` |
-| 6 | The automatic materialization rule | Lesson 3 | With the `stage` removed from a copy of stage_reuse, `--emit-c` shows one multiply loop and a temp buffer; for [the chain test](#lesson-3-kernel-fusion-and-fission) in Lesson 3 (save it in `tests/chapter4/`), exactly one STAGE temp buffer besides the accumulator and the assert's buffer; [index_operand](../oracle/tests/valid/index_operand.uir) reads `PASS PASS` (its `%v` feeds indices, so it is not staged) |
+| 5 | Materialize a rank-1 LOAD that a later store to its buffer depends on (the hazard) | Lesson 3 | [shift](examples/shift.uir) and the oracle's [load_before_overwrite](../oracle/tests/valid/load_before_overwrite.uir) (the cross-loop listing in Lesson 3) pass compiled and read `MATCH MATCH` in the loop; before this step, the oracle on shift's lowered UIR reports `got [1 1 1 1]` |
+| 6 | The automatic materialization rule | Lesson 3 | With the `stage` removed from a copy of stage_reuse, `--emit-c` shows one multiply loop and a temp buffer; for [the chain test](#lesson-3-kernel-fusion-and-fission) in Lesson 3 (save it in `tests/chapter4/`), exactly one STAGE temp buffer besides the accumulator and the assert's buffer; [index_operand](../oracle/tests/valid/index_operand.uir) reads `MATCH MATCH` (its `%v` feeds indices, so it is not staged) |
 
 The chapter is done when `check_compiler.py --chapter 4` matches the oracle in both modes, and the loop of step 1 prints matching words for every example and every test under `tests/`.
 
@@ -180,8 +180,8 @@ The syllabus lists no lectures for week 4. The three lessons follow the week's t
 | `add [1 2 3] [10 20 30]` | `(3,)` | `[11 22 33]` |
 | `cmplt [1 5] [3 3]` | `(2,)` | `[true false]` |
 | `cast [1 2] dtype=f32` | `(2,)` | `[1.0 2.0]` |
-| `add [1 2 3] [1 2]` | | ERROR: shapes `(3,)` and `(2,)` |
-| `add [1 2 3] 1` | | ERROR: shapes `(3,)` and `()` |
+| `add [1 2 3] [1 2]` | | REJECTED: shapes `(3,)` and `(2,)` |
+| `add [1 2 3] 1` | | REJECTED: shapes `(3,)` and `()` |
 
 The rule: every source of an ALU op has the same shape, and that is the result's shape. Shapes are still at most rank 1 ("We still keep the rank < 2 restriction"), and indices (`INDEX`, a `SHRINK` offset) are still rank 0.
 
@@ -271,7 +271,7 @@ Here is [center.uir](examples/center.uir), which subtracts the mean, evaluated n
 Notice the shape going down to `()` at the REDUCE and back up to `(4,)` at the EXPAND. That round trip, a reduction broadcast back over the axis it came from, is the shape of softmax, layer norm and mean-centering, and Lesson 2 shows what it does to the loops.
 
 > **Predict.** Is `reduce (cmplt [1 2] [2 2]) op=max pop=1` valid? And `reduce %buf op=add pop=1`, with `%buf` a BUFFER?
-> <details><summary>Answer</summary>Both are ERRORs. The first reduces <code>bool</code>s, and <code>max</code> takes only <code>i32</code> and <code>f32</code>, like the ALU op. The second reduces memory: a REDUCE's source is a value, so write <code>reduce (load %buf) …</code>, after the stores it should see.</details>
+> <details><summary>Answer</summary>Both are REJECTED. The first reduces <code>bool</code>s, and a REDUCE takes only <code>i32</code> and <code>f32</code> sources. The second reduces memory: a REDUCE's source is a value, so write <code>reduce (load %buf) …</code>, after the stores it should see.</details>
 
 **Common mistakes.**
 
@@ -401,7 +401,7 @@ Its source, `elem(%row, %k)`, uses the row loop `%i` as well as the new loop `%k
 The rule: the init waits for every RANGE that `elem(x, r)` uses, except `r` itself. tinygrad's `lower_reduce` does the same (`acc.after(*input_ranges)`). Chapter 3's `nest` then places the init inside loop `i` and before loop `k`, like the gemm's init in [chapter 3](../03-loops/README.md#lesson-3-gemms-and-convs).
 
 > **Predict.** Write `%init = store %acc 0` instead. What does the program compute?
-> <details><summary>Answer</summary><code>[6 21]</code>, a FAIL. The init depends on no loop, so it runs once, before everything. Row 0 sums to 6, and row 1 starts from 6 instead of 0: <code>6 + 4 + 5 + 6 = 21</code>.</details>
+> <details><summary>Answer</summary><code>[6 21]</code>, a MISMATCH (the assert does not hold). The init depends on no loop, so it runs once, before everything. Row 0 sums to 6, and row 1 starts from 6 instead of 0: <code>6 + 4 + 5 + 6 = 21</code>.</details>
 
 **A reduce feeding a broadcast.** In [center.uir](examples/center.uir), the sum's result is used inside the loop over `y`. Lowered and rendered, it becomes three loops (names will differ):
 
@@ -409,6 +409,8 @@ The rule: the init waits for every RANGE that `elem(x, r)` uses, except `r` itse
 #include <stdint.h>
 
 static int32_t idiv(int32_t a, int32_t b) {  // floor division, from chapter 2
+    if (b == 0) return -1;
+    if (b == -1) return (int32_t)(0u - (uint32_t)a);
     int32_t q = a / b;
     return (a % b != 0 && (a < 0) != (b < 0)) ? q - 1 : q;
 }
@@ -575,7 +577,7 @@ The rule is simple, not optimal. It materializes the cheap `mul` above, where re
 The value `load (shrink %x1 0 3)` is the whole window `[1 2 3]`, read before the store, so `x` becomes `[1 1 2 3]`. Fused, the read moves into the store's loop:
 
 ```text
-# FAIL: fused, the loop overwrites x[1] before it reads it
+# MISMATCH: fused, the loop overwrites x[1] before it reads it
 %x    = buffer 4 slot=0 dtype=i32
 %sx   = store %x [1 2 3 4]
 %x1   = after %x %sx
@@ -591,7 +593,7 @@ The value `load (shrink %x1 0 3)` is the whole window `[1 2 3]`, read before the
 | 1 | 1, written at `r = 0` | 1 | `[1 1 1 4]` |
 | 2 | 1, written at `r = 1` | 1 | `[1 1 1 1]` |
 
-This is a *hazard*: fusion changed the order of a read and a write to the same memory. The oracle accepts this program as valid, and it computes `[1 1 1 1]`: a FAIL, not an ERROR. The ordering check of chapter 2 is satisfied (the store depends on the load), but it orders *nodes*, not loop iterations. Here the shape program means "read all, then write all", and fusion turned that into "read one, write one". The fix is to materialize the value first:
+This is a *hazard*: fusion changed the order of a read and a write to the same memory. The oracle accepts this program as valid, and it computes `[1 1 1 1]`: a MISMATCH, not a REJECTED. The ordering check of chapter 2 is satisfied (the store depends on the load), but it orders *nodes*, not loop iterations. Here the shape program means "read all, then write all", and fusion turned that into "read one, write one". The fix is to materialize the value first:
 
 ```text
 %x    = buffer 4 slot=0 dtype=i32
@@ -620,7 +622,7 @@ The same thing can happen across loops. Here `%v` is read before `x` is overwrit
 %test = assert (after %z %sz) [1 2 3]
 ```
 
-Fused, `z`'s loop would load `x[r]` with nothing ordering it against the `[7 7 7]` store, and the oracle rejects the lowered program as unordered, an ERROR for a program that was valid. A LOAD is free to re-read only while its buffer has not changed.
+Fused, `z`'s loop would load `x[r]` with nothing ordering it against the `[7 7 7]` store, and the oracle rejects the lowered program as unordered, a REJECTED outcome for a program that was valid. A LOAD is free to re-read only while its buffer has not changed.
 
 The rule: **when a STORE to a buffer depends on a rank-1 LOAD of that buffer, materialize the LOAD.** Its consumers then read the temp buffer, wherever their loops end up. In shift.uir the store's value is that load; here `%s2` depends on `%v` through `%sy`. tinygrad realizes a store's value when it reads the target (`realize_store_after_src` in `tinygrad/schedule/indexing.py`); the course materializes the LOAD itself, which also covers later stores reached through `AFTER`. It is conservative: `x = x + 1` would be safe fused, because each iteration reads only the element it writes. Proving that needs index analysis, which this course does not do yet. Unlike the first two situations, this one is about correctness, so tests catch it.
 
@@ -630,7 +632,7 @@ The rule: **when a STORE to a buffer depends on a rank-1 LOAD of that buffer, ma
 
 > **Interpretation.** Everything still renders into one C function (chapter 2's calling convention), and a "kernel" is one top-level loop nest in it. tinygrad, where each materialized buffer is a kernel boundary (`bufferize_to_store` in `tinygrad/schedule/rangeify.py`), keeps a REDUCE that feeds a broadcast in its consumer's kernel. The course's rule is tinygrad's first step (`run_rangeify` marks a node whose consumers give it different ranges); tinygrad then unmarks cheap nodes (`remove_bufferize`), and its free list is not the course's.
 
-**Outside the hazard, results never depend on fusion.** Every materialization choice gives the same answer: values are pure, so computing one twice or reading it from memory gives the same bits. That is why the examples' verdicts cannot tell whether your rule works. Read `--emit-c` instead (step 6 of How to start). It is also why the choice is safe to experiment with: change the rule, and the tests tell you only whether you broke something.
+**Outside the hazard, results never depend on fusion.** Every materialization choice gives the same answer: values are pure, so computing one twice or reading it from memory gives the same bits. That is why the examples' outcomes cannot tell whether your rule works. Read `--emit-c` instead (step 6 of How to start). It is also why the choice is safe to experiment with: change the rule, and the tests tell you only whether you broke something.
 
 **Common mistakes.**
 
@@ -654,7 +656,7 @@ Rules your compiler checks, in addition to chapters 1–3:
 
 - **ALU sources have one shape**, of rank 0 or 1. A rank-0 value next to a vector must be expanded first.
 - **Indices stay rank 0**: the indices of `INDEX` and the offset of `SHRINK`.
-- **`REDUCE`**: its source is a value (not memory, not an effect), its op is `add`, `mul` or `max` and takes the source's dtype, and `pop` is at most the source's rank.
+- **`REDUCE`**: its source is a value (not memory, not an effect), its op is `add`, `mul` or `max`, its dtype is `i32` or `f32` (not `bool`), and `pop` is at most the source's rank.
 - **`EXPAND`**: its source is a rank-0 value, so the result is at most rank 1.
 - **`STAGE`**: its source is a value.
 - **`STACK` inputs are still constants** ([Spec notes](#spec-notes)).
@@ -667,7 +669,7 @@ Start by writing ten tests of your own in UIR (the syllabus asks for ten each we
 2. **Interpret** the new ops: elementwise ALU ops on rank-1 values, `EXPAND`, `REDUCE` (from the identity, in index order) and `STAGE` (returns its source).
 3. **Rangeify** every program after inlining: lower it to chapter 3 UIR, in which no computed value has a shape and every loop is a RANGE and END. Lower REDUCEs to accumulators with their init in the right loops.
 4. **Materialize** into temp ALLOCs: every `STAGE`, the actual value of a rank-1 ASSERT, every rank-1 LOAD that a later STORE to its buffer depends on, and every node the [course's rule](#lesson-3-kernel-fusion-and-fission) selects.
-5. **Print** the lowered program with `--emit-uir`; for every example and test, the oracle gives it the same verdict as the original.
+5. **Print** the lowered program with `--emit-uir`; for every example and test, the oracle gives it the same outcome as the original.
 6. **Render**, compile and run every program from chapters 1–4 with chapter 3's `nest` and `render`, and keep the interpreter agreeing with the C.
 
 Restrictions this chapter: shapes are at most rank 1; broadcasting is written with `EXPAND`; `STACK` inputs are constants; everything renders into one C function.
@@ -711,7 +713,7 @@ All in [examples/](examples/). Each file's comments show the hand calculation. T
    <details><summary>Answer</summary><code>1 × 2 × -3 × 4 = -24</code>, and <code>-2</code> (max starts from <code>-2147483648</code>).</details>
 4. What is `elem(add %v (expand %s 4), r)`, where `%v` is a rank-1 load of buffer `%b` and `%s` is rank 0?
    <details><summary>Answer</summary><code>add (load (index %b r)) %s</code>: the load reads element <code>r</code>, and the expand gives <code>%s</code> itself.</details>
-5. Your `--emit-uir` output gets PASS from `oracle/uir.py --lowered`, but the compiled program gives FAIL. Which part of your compiler has the bug?
+5. Your `--emit-uir` output gets MATCH from `oracle/uir.py --lowered`, but the compiled program gives MISMATCH. Which part of your compiler has the bug?
    <details><summary>Answer</summary>Rangeify produced a correct chapter 3 program, so the bug is after it: in <code>nest</code>, <code>render</code> or the runtime. Or the printer: check that <code>--emit-uir</code> prints the same graph you render.</details>
 6. Name the three situations in which rangeify materializes a value into a temp buffer instead of fusing it, and say which one is about correctness.
    <details><summary>Answer</summary>The program asks for it (STAGE, a rank-1 assert); consumers need the value at different indices (the course's rule); a store to a buffer depends on a rank-1 load of it (the hazard). The last one is about correctness: fused, it computes a different result.</details>

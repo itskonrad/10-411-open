@@ -1,0 +1,10 @@
+# bool operands of add, mul, max and cmplt: OR, AND, OR, and false < true.
+# (The released reference's table gives them the operands' dtype; the values are tinygrad's.)
+%o    = add true false
+%a    = mul true false
+%m    = max false false
+%c    = cmplt false true
+%x    = xor %o %c
+%y    = xor %a %m
+%z    = xor %x %y
+%test = assert %z false

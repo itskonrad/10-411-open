@@ -1,0 +1,4 @@
+# expect: shape
+# Two vectors of one shape are still vectors: ALU ops take scalars in week 1.
+%x    = add [1 2] [3 4]
+%test = assert 1 1

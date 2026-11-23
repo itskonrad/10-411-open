@@ -1,0 +1,5 @@
+# expect: root
+# A function nobody calls is unreachable too.
+%x = param [] slot=0 dtype=i32 addrspace=ALU
+%f = add %x 1
+%test = assert 3 3

@@ -1,0 +1,4 @@
+# expect: op
+# There is no `sub`.
+%x = sub 3 1
+%test = assert %x 2

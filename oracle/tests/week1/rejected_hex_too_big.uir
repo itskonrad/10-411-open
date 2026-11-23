@@ -1,0 +1,4 @@
+# expect: dtype
+# i32 literals are 32 bits wide: 0xffffffff does not fit. (The reference does not say; the oracle rejects it.)
+%x = add 0xffffffff 0
+%test = assert %x 0

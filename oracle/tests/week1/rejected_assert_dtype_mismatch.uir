@@ -1,0 +1,3 @@
+# expect: dtype
+# The reference's example: an i32 and a bool never match, so the file is invalid.
+%t = assert 3 true

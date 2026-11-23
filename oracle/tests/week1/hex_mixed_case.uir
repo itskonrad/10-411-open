@@ -1,0 +1,3 @@
+# Hex digits may be either case, the 0x prefix is lowercase: 0xFf = 255.
+%x    = add 0xFf 1
+%test = assert %x 256

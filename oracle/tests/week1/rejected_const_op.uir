@@ -1,0 +1,4 @@
+# expect: op
+# A constant is written as its literal, not as const.
+%x = const 3
+%test = assert %x 3

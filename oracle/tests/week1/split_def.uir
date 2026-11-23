@@ -1,0 +1,6 @@
+# A newline is just whitespace, even inside `%x =` and between a binding's tokens.
+%x
+=
+add 1
+2
+%test = assert %x 3

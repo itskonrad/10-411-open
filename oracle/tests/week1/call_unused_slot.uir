@@ -1,0 +1,5 @@
+# Slot 0 is unused by the body, but the call still passes it; the body uses slot 1.
+%y    = param [] slot=1 dtype=i32 addrspace=ALU
+%f    = add %y 1
+%r    = call %f 100 6
+%test = assert %r 7

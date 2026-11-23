@@ -1,0 +1,4 @@
+# expect: op
+# recip needs f32, which week 1 does not have.
+%x = recip 4
+%test = assert %x 0

@@ -1,0 +1,3 @@
+# div 7 0 is -1, not 0.
+%q    = div 7 0
+%test = assert %q 0

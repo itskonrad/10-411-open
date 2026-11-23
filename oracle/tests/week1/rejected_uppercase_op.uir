@@ -1,0 +1,4 @@
+# expect: parse
+# The language is case-sensitive: opcodes are lowercase.
+%x = ADD 1 2
+%test = assert %x 3

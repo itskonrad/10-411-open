@@ -1,0 +1,4 @@
+# expect: parse
+# A name is defined before it is used.
+%x = add %y 1
+%test = assert %x 1

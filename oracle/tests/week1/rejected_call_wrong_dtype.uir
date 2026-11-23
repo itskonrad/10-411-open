@@ -1,0 +1,6 @@
+# expect: call
+# An argument has the param's dtype.
+%x = param [] slot=0 dtype=i32 addrspace=ALU
+%f = add %x 1
+%r = call %f true
+%test = assert %r 2

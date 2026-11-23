@@ -47,7 +47,7 @@
 
 ## What you build
 
-In chapter 1 your compiler ran every test by rewriting it down to constants. In this chapter it becomes a compiler in the full sense: it prints the program as C, hands that to the system's C compiler, loads the result into its own process, calls it, and reads back the verdict. Programs also gain memory: buffers they store into and load from.
+In chapter 1 your compiler ran every test by rewriting it down to constants. In this chapter it becomes a compiler in the full sense: it prints the program as C, hands that to the system's C compiler, loads the result into its own process, calls it, and reads back the outcome. Programs also gain memory: buffers they store into and load from.
 
 Here is [store_load.uir](examples/store_load.uir), the smallest program with memory (`buffer []` is a buffer of shape `()`, one element):
 
@@ -71,20 +71,21 @@ int kernel(int32_t *buf0) {
 }
 ```
 
-The runtime allocates one `int32_t` for `buf0`, calls `kernel`, and gets 1 back: PASS. Verdicts are the same three words as before. ERROR now also covers the new rules, such as a load that is not ordered after the store it should see:
+The runtime allocates one `int32_t` for `buf0`, calls `kernel`, and gets 1 back: MATCH. The outcomes are the same four words as before. REJECTED now also covers the new rules, such as a load that is not ordered after the store it should see:
 
 ```text
-$ mycc store_load.uir
-PASS
-$ mycc unordered.uir
-ERROR line 4: load (line 5) and store (line 4) of %buf are not ordered: use after
+$ mycc store_load.uir rejected_unordered.uir
+MATCH store_load.uir
+REJECTED rejected_unordered.uir
 ```
+
+and on stderr, for you: `rejected_unordered.uir:4: load (line 5) and store (line 4) of %buf are not ordered: use after`.
 
 Inside, the compiler now has two ways to run a test, and they must agree:
 
 ```text
                               ┌─▶ interpret (one array per buffer) ─────────────────────┐
- .uir ─▶ parse, check, props ─┤                                                         ├─▶ verdict
+ .uir ─▶ parse, check, props ─┤                                                         ├─▶ outcome
                               └─▶ inline ─▶ toposort ─▶ render ─▶ cc ─▶ load ─▶ call ───┘
 ```
 
@@ -98,9 +99,9 @@ You have a chapter 1 compiler that passes every chapter 1 example. This section 
 
 **Step 0: three modes.** Give your command flags of your own:
 
-- `--interpret`: chapter 1's path. Step 4 extends it to memory.
+- `--interpret`: chapter 1's path. Step 5 extends it to memory.
 - `--emit-c`: print the generated C and stop. You will use it constantly.
-- No flag: interpret first. If that gives ERROR, report it: reading memory that was never stored (like chapter 1's undefined arithmetic) is an ERROR only a run can see, and compiled C cannot see it. Otherwise compile, run, and compare the two verdicts. If they differ, print a line that is not a verdict, such as `MISMATCH interpreter PASS, C FAIL`, and exit non-zero, so the checker reports it.
+- No flag: interpret first. If that gives REJECTED, report it: reading memory that was never stored is rejected only by a run, and compiled C cannot see it. Otherwise compile, run, and compare the two outcomes. If they differ, print a line that is not an outcome, such as `DISAGREE interpreter MATCH, C MISMATCH`, and exit non-zero, so the checker reports it.
 
 Until the compiled path exists, let the default fall back to `--interpret`. Check both modes:
 
@@ -109,7 +110,7 @@ python3 -I tools/check_compiler.py --chapter 2 -- python3 compiler/mycc.py --int
 python3 -I tools/check_compiler.py --chapter 2 -- python3 compiler/mycc.py
 ```
 
-At this point the chapter 1 files should all match, and the chapter 2 examples will not until steps 4–6.
+At this point the chapter 1 files should all match, and the chapter 2 examples will not until steps 3–7.
 
 **Step 1: the thinnest compiled slice.** Compile a chapter 1 program before touching memory. For [add.uir](../01-uops-and-rewrites/examples/add.uir), render the `add` as a C variable and the `assert` as the return value:
 
@@ -122,22 +123,23 @@ int kernel(void) {
 }
 ```
 
-Write it to a file, compile it to a shared library, load it, call `kernel`, and print PASS if it returns 1. That is the whole runtime in miniature (Lesson 2 has the code). If you did [chapter 0's shared-library exercise](../00-prerequisites/README.md#lesson-4-c-index-arithmetic-and-loop-nests), you have done this once already. Check:
+Write it to a file, compile it to a shared library, load it, call `kernel`, and print MATCH if it returns 1. That is the whole runtime in miniature (Lesson 2 has the code). If you did [chapter 0's shared-library exercise](../00-prerequisites/README.md#lesson-4-c-index-arithmetic-and-loop-nests), you have done this once already. Check:
 
 ```sh
 python3 -I tools/check_compiler.py 01-uops-and-rewrites/examples/add.uir -- python3 compiler/mycc.py
 ```
 
-**Steps 2–7: grow it.**
+**Steps 2–8: grow it.**
 
 | Step | Add | Read | Done when |
 |------|-----|------|-----------|
-| 2 | Render every chapter 1 op, with exact C translations and the `idiv`/`imod`/`ishl` helpers. Render after inlining calls, without folding: run your rewrite engine with only the inline rule | Lesson 1 | Every chapter 1 example gives the same verdict compiled as interpreted |
-| 3 | Parse the new ops; compute `addrspace`, `shape` and `dtype` for them; check the rules that need no bounds or ordering: address spaces, stores, slots, no BUFFER in a call, rank-1 loads, AFTER's effects | Lesson 3, [Ops introduced](#ops-introduced) | The oracle's [alu_on_global](../oracle/tests/invalid/alu_on_global.uir), [store_shape](../oracle/tests/invalid/store_shape.uir), [buffer_in_call](../oracle/tests/invalid/buffer_in_call.uir), [buffer_alloc_slot](../oracle/tests/invalid/buffer_alloc_slot.uir) and [after_value_dep](../oracle/tests/invalid/after_value_dep.uir) give ERROR. Copy them into `tests/chapter2/` as your first tests |
-| 4 | Interpret memory: walk the graph in topological order with one array per BUFFER | Lesson 2 | [store_load](examples/store_load.uir), [index_buffer](examples/index_buffer.uir), [chained_stores](examples/chained_stores.uir) and [f32_buffer](examples/f32_buffer.uir) give PASS with `--interpret`, and [load_never_stored](../oracle/tests/invalid/load_never_stored.uir) gives ERROR |
-| 5 | Render memory: buffers as pointer parameters, `INDEX`, `LOAD`, `STORE`, `AFTER`, rank-1 stores; allocate buffers in the runtime | Lessons 1 and 2 | The same four give PASS compiled |
-| 6 | `SHRINK` and `ALLOC`, and fresh ALLOC slots when inlining | Lesson 2 | [shrink_window](examples/shrink_window.uir), [symbolic_offset](examples/symbolic_offset.uir) and [alloc_in_call](examples/alloc_in_call.uir) give PASS both ways |
-| 7 | `storage_base`, `accesses`, the fully-ordered check, and bounds checks for memory | Lesson 3 | [unordered.uir](../oracle/tests/invalid/unordered.uir) and [shrink_oob.uir](../oracle/tests/invalid/shrink_oob.uir) give ERROR |
+| 2 | Parse `(op ...)` wherever a source can go (this chapter's new syntax, below), and render every chapter 1 op, with exact C translations and the `idiv`/`imod`/`ishl` helpers. Render after inlining calls, without folding: run your rewrite engine with only the inline rule | Lesson 1 | Every chapter 1 example gives the same outcome compiled as interpreted, and [index_buffer](examples/index_buffer.uir) parses |
+| 3 | `f32`: float literals and how integer literals adapt to them, `cast` to and from `f32`, `RECIP`, rounding after every op, and their C translations | Lesson 1 ("A new dtype" and the C table after it), [uir.md](../uir.md#literals) | [recip](examples/recip.uir), [f32_literal](examples/f32_literal.uir) and [f32_round](examples/f32_round.uir) give MATCH both ways |
+| 4 | Parse the new ops; compute `addrspace`, `shape` and `dtype` for them; check the rules that need no bounds or ordering: address spaces, stores, slots, no BUFFER in a call, rank-1 loads, AFTER's effects | Lesson 3, [Ops introduced](#ops-introduced) | The oracle's [alu_on_global](../oracle/tests/invalid/alu_on_global.uir), [store_shape](../oracle/tests/invalid/store_shape.uir), [buffer_in_call](../oracle/tests/invalid/buffer_in_call.uir), [buffer_alloc_slot](../oracle/tests/invalid/buffer_alloc_slot.uir) and [after_value_dep](../oracle/tests/invalid/after_value_dep.uir) give REJECTED. Copy them into `tests/chapter2/` as your first tests |
+| 5 | Interpret memory: walk the graph in topological order with one array per BUFFER | Lesson 2 | [store_load](examples/store_load.uir), [index_buffer](examples/index_buffer.uir), [chained_stores](examples/chained_stores.uir) and [f32_buffer](examples/f32_buffer.uir) give MATCH with `--interpret`, and [load_never_stored](../oracle/tests/invalid/load_never_stored.uir) gives REJECTED |
+| 6 | Render memory: buffers as pointer parameters, `INDEX`, `LOAD`, `STORE`, `AFTER`, rank-1 stores; allocate buffers in the runtime | Lessons 1 and 2 | The same four give MATCH compiled |
+| 7 | `SHRINK` and `ALLOC`, and fresh ALLOC slots when inlining | Lesson 2 | [shrink_window](examples/shrink_window.uir), [symbolic_offset](examples/symbolic_offset.uir) and [alloc_in_call](examples/alloc_in_call.uir) give MATCH both ways |
+| 8 | `storage_base`, `accesses`, the fully-ordered check, and bounds checks for memory | Lesson 3 | [unordered.uir](../oracle/tests/invalid/unordered.uir) and [shrink_oob.uir](../oracle/tests/invalid/shrink_oob.uir) give REJECTED |
 
 The chapter is done when `check_compiler.py --chapter 2` matches the oracle in both modes, on every example and every test under `tests/`.
 
@@ -241,6 +243,40 @@ void kernel(int32_t *buf0) {
 
 Two kinds of node are statements rather than values: a `STORE` must appear exactly once and in the right place, and a `LOAD` must read memory at its position, not later. That is why a LOAD gets its own variable even though `buf0[0]` would be a valid C expression: written inline into a later line, it could read memory after a later store. Topological order puts each statement after everything it depends on. Lesson 3 shows why that is enough. The syllabus calls the result "loopless C functions that act on memory and immediates"; loops arrive in chapter 3.
 
+**New syntax: nested ops.** Chapter 1's files had one op per line. From this chapter on, a test may write an op inline in parentheses wherever a source can go: `load (index %b 0)` means the same as `%t = index %b 0` on its own line followed by `load %t`. Your parser reads `(`, parses an op and its sources (recursively, since a source can be another `(op ...)`), expects `)`, and returns the node: it builds exactly the graph the longer form builds, so nothing after parsing changes. This is course syntax: the released week 1 reference has no nesting, and the oracle accepts it from `--week 2` on ([uir.md](../uir.md#lines)). Most of this chapter's examples use it.
+
+**A new dtype: `f32`.** Chapter 1 had two dtypes, `i32` and `bool`. The syllabus lists a third, `f32`, which the course's released week 1 reference leaves out; this chapter adds it, because here it starts to matter: the C you print rounds floats, and buffers will hold data such as weights. (Until the week 2 reference says how `f32` really arrives, this is an interpretation.) What changes in your compiler:
+
+- **Float literals.** `2.5`, `1e-3`, `-inf` and `nan` are `f32` constants, and `dtype=f32` is allowed on `cast`, `param`, `buffer` and `alloc`. A float literal is rounded to the nearest `f32` when parsed: `0.1` becomes `0.100000001490116…`.
+- **Literals adapt.** An integer literal next to an `f32` becomes one: in `add %x 1` with `%x` an `f32`, the `1` is `1.0`; `add 2 2.5` is an `f32` add of `2.0` and `2.5`; a float literal next to an `i32` is an error ([the rules](../uir.md#literals)). The dtype is part of a constant's arg, so the parser needs the neighbors' dtypes before it builds the `CONST`, and an `i32` `3` and an `f32` `3.0` are different UOps:
+
+  | UIR | Literals become |
+  |-----|-----------------|
+  | `add %x 1`, with `%x` an `f32` | `CONST 1.0` (`f32`) |
+  | `add 2 2.5` | `CONST 2.0`, `CONST 2.5` (`f32`: a float literal is among them) |
+  | `add %n 2.5`, with `%n` an `i32` | an error: a float literal cannot be an `i32` |
+  | `%a = 3` | `CONST 3`, an `i32`, whatever uses `%a` later |
+
+  Floats also change the hash-cons key: `0.0 == -0.0` and `nan != nan` in most languages, yet `0.0`, `-0.0` and `nan` must each be exactly one UOp, so key a float by its `repr` in Python (or by its bits).
+- **Rounding.** Every `f32` op rounds its result to the nearest `f32` (ties to even). Python floats are 64-bit, so round by storing the value in a 32-bit array:
+
+```python
+from array import array
+
+def f32(x: float) -> float:
+    return array("f", [x])[0]  # nearest f32; inf if too large
+
+assert f32(16777216.0 + 1.0) == 16777216.0  # 2^24 + 1 is not an f32: ties to even
+assert f32(0.1) != 0.1
+```
+
+  Compute one op in 64-bit and round it at once: `f32(a + b)`, `f32(a * b)`. For `+`, `−`, `×` and `÷` of two `f32` values that gives exactly the `f32` result, because a 64-bit float has more than twice the precision ([Figueroa 1995](#sources)). Only rounding *once at the end* of several ops is wrong: `add (add 16777216.0 1.0) 1.0` is `16777216.0` in `f32`, because each `+ 1` rounds away, but adding in 64-bit and rounding at the end gives `16777218.0`. [f32_round.uir](examples/f32_round.uir) is that program.
+- **`RECIP`.** `recip x` is `1 / x` for an `f32` `x`: `recip 0.0` is `inf` and `recip -0.0` is `-inf` (Python raises an exception for `1 / 0.0`, so special-case it). It is how you write division: `a / b` is `mul a (recip b)`, which rounds twice, so it can differ from a correctly rounded division in the last bit.
+- **Casts.** `cast` from `i32` gives the nearest `f32`; from `f32` to `i32` it truncates toward zero. A cast of NaN, infinity or an out-of-range value to `i32` is undefined, and tests never do it.
+- **Your chapter 1 rules and `f32`.** Each rule needs its own check. `x × 1 → x`, `x + x → x × 2` and canonical order are safe. Reassociating, and combining terms like `x × 2 + x × 3 → x × 5`, change rounding. `x + 0 → x` is wrong for `x = -0.0`. `x × 0 → 0` is wrong when `x` is NaN or infinite (the result is NaN) or negative (the result is `-0.0`). Constant folding and the bounds rules need no change: `f32` values have no bounds.
+
+[recip.uir](examples/recip.uir), [f32_literal.uir](examples/f32_literal.uir) and [f32_round.uir](examples/f32_round.uir) exercise all of it, and step 3 of [How to start](#how-to-start) is where you add it.
+
 **C refresher: exact translations.** The C you emit must compute exactly what your chapter-1 interpreter computes ([uir.md](../uir.md#arithmetic)). If pointers and flat arrays are rusty, read [chapter 0, Lesson 4](../00-prerequisites/README.md#lesson-4-c-index-arithmetic-and-loop-nests) first. Most ops map directly; these need care:
 
 | UIR | C |
@@ -269,30 +305,36 @@ Rank-1 values need a convention too, since C cannot assign whole arrays and ther
 #include <assert.h>
 #include <stdint.h>
 
-static int32_t idiv(int32_t a, int32_t b) {  // floor division
+static int32_t idiv(int32_t a, int32_t b) {  // floor division; -1 at 0; the quotient of INT32_MIN by -1 wraps
+    if (b == 0) return -1;
+    if (b == -1) return (int32_t)(0u - (uint32_t)a);
     int32_t q = a / b;
     return (a % b != 0 && (a < 0) != (b < 0)) ? q - 1 : q;
 }
 
-static int32_t imod(int32_t a, int32_t b) {  // floor modulo: the result takes b's sign
+static int32_t imod(int32_t a, int32_t b) {  // floor modulo: the result takes b's sign; a at 0
+    if (b == 0) return a;
+    if (b == -1) return 0;  // a % -1 is 0, but INT32_MIN % -1 is undefined in C
     int32_t r = a % b;
     return (r != 0 && (r < 0) != (b < 0)) ? r + b : r;
 }
 
-static int32_t ishl(int32_t a, int32_t b) {  // shifting a negative int is undefined, so shift as unsigned
-    return (int32_t)((uint32_t)a << b);
+static int32_t ishl(int32_t a, int32_t b) {  // shift by b mod 32; shifting a negative int is undefined, so shift as unsigned
+    return (int32_t)((uint32_t)a << (b & 31));
 }
 
 int main(void) {
     assert(idiv(-7, 2) == -4 && imod(-7, 2) == 1 && idiv(7, -2) == -4 && imod(7, -2) == -1);
     assert(idiv(-8, 2) == -4 && imod(-8, 2) == 0 && ishl(-1, 4) == -16);
+    assert(idiv(7, 0) == -1 && imod(7, 0) == 7 && idiv(INT32_MIN, -1) == INT32_MIN && imod(INT32_MIN, -1) == 0);
+    assert(ishl(1, 33) == 2 && ishl(1, -1) == INT32_MIN);
     return 0;
 }
 ```
 
 Converting the shifted `uint32_t` back to `int32_t` is implementation-defined in C11 ([N1570](#sources) §6.3.1.3); GCC and Clang wrap, which is what you want. The `f32` constant rule works because the literal was already rounded to `f32` when parsed ([chapter 0, Lesson 2](../00-prerequisites/README.md#lesson-2-numbers-in-a-machine) explains why `repr` round-trips).
 
-Walk `idiv(-7, 2)` through: C's `-7 / 2` truncates to `-3`, and `-7 % 2` is `-1`. The remainder is not zero and the signs of `a` and `b` differ, so the true quotient was negative and not whole, and truncation rounded it up: subtract one to get the floor, `-4`. When the signs agree, truncation and floor are the same, and the helper returns C's answer unchanged.
+The two `if`s at the top of each helper are the cases C cannot do: a zero divisor (UIR defines it), and `-1`, where the one overflowing quotient `INT32_MIN / -1` is undefined in C. Walk `idiv(-7, 2)` through: C's `-7 / 2` truncates to `-3`, and `-7 % 2` is `-1`. The remainder is not zero and the signs of `a` and `b` differ, so the true quotient was negative and not whole, and truncation rounded it up: subtract one to get the floor, `-4`. When the signs agree, truncation and floor are the same, and the helper returns C's answer unchanged.
 
 Here is the table at work on [examples/f32_buffer.uir](examples/f32_buffer.uir), which stores `[1 2]` into an `f32` buffer and multiplies element 1 by `0.5`. A renderer that follows it produces (variable names will differ):
 
@@ -327,14 +369,14 @@ Compile with `-std=c11 -fwrapv -ffp-contract=off`. The last flag stops the compi
 
 > **Interpretation.** The syllabus does not fix a calling convention. This chapter uses the simplest one: the function takes one pointer per BUFFER, in increasing slot order, and nothing else.
 
-Both start with undefined contents. There is no way to pass input data in yet, so a test writes its inputs with `STORE` first, and reading an element that was never stored is an error (the interpreter reports it; C cannot). An ALLOC outside any call belongs to the program, which counts as one call.
+Both start with undefined contents. There is no way to pass input data in yet, so a test writes its inputs with `STORE` first, and reading an element that was never stored is REJECTED (the interpreter reports it; C cannot). An ALLOC outside any call belongs to the program, which counts as one call.
 
 > **Interpretation.** "Never in call" is read two ways at once: a `CALL` body cannot contain a `BUFFER`, and memory cannot be passed to or returned from a call. A call's arguments and body are values; scratch data lives in ALLOCs. The oracle enforces both.
 
 **Scratch memory and inlining.** [examples/alloc_in_call.uir](examples/alloc_in_call.uir) calls one body twice, and the body uses scratch memory:
 
 ```text
-%x    = param [] slot=0 dtype=i32
+%x    = param [] slot=0 dtype=i32 addrspace=ALU
 %tmp  = alloc [] slot=0 dtype=i32
 %put  = store %tmp %x
 %f    = add (load (after %tmp %put)) 1
@@ -376,6 +418,8 @@ In C a window is a pointer, `buf0 + offset`, and its element `i` is `(buf0 + off
 #include <stdint.h>
 
 static int32_t imod(int32_t a, int32_t b) {  // from Lesson 1
+    if (b == 0) return a;
+    if (b == -1) return 0;
     int32_t r = a % b;
     return (r != 0 && (r < 0) != (b < 0)) ? r + b : r;
 }
@@ -465,12 +509,12 @@ int kernel(int32_t *buf0) {
 }
 ```
 
-A rank-1 assert compares element by element. To report FAIL with the actual values, take them from the interpreter, which the default mode has already run.
+A rank-1 assert compares element by element. To report MISMATCH with the actual values, take them from the interpreter, which the default mode has already run.
 
 **Interpreting memory.** Rewriting alone cannot run a `STORE`, so the interpreter gains a second part: after inlining, a walk over the graph in topological order, with one array per BUFFER or ALLOC.
 
 - `BUFFER` and `ALLOC` make a new array, with every element marked "never stored". Inlining already gave each call its own ALLOC slot, so one array per slot is enough.
-- `STORE` writes the array, and `LOAD` reads it. Reading an element marked "never stored" is an ERROR.
+- `STORE` writes the array, and `LOAD` reads it. Reading an element marked "never stored" is REJECTED.
 - `AFTER` passes its first source through.
 - Every other node is computed from its sources' values with the same folding table as chapter 1, so the two parts agree on arithmetic.
 
@@ -484,7 +528,7 @@ For `chained_stores.uir`:
 | `load (index %b1 0)` | read index 0: 1 | |
 | `add … 1` | fold: 2 | |
 | `%s1` | write 2 at index 1 | `[1, 2]` |
-| `assert (after %b %s1) [1 2]` | compare | PASS |
+| `assert (after %b %s1) [1 2]` | compare | MATCH |
 
 Because loads and stores are fully ordered (Lesson 3), any topological order gives the same answer. The [oracle](../oracle/README.md) works this way. This interpreter is the reference your compiled C is checked against, in every chapter from here on.
 
@@ -492,7 +536,7 @@ Because loads and stores are fully ordered (Lesson 3), any topological order giv
 
 - Reusing one file name for every kernel, so the loader returns a stale library.
 - Building in `/tmp`. Some systems mount it `noexec`, and loading a library from it then fails with "failed to map segment from shared object".
-- Allocating buffers of the wrong size or element type. Too small, and the kernel writes past the end of the allocation. A `float` buffer allocated as `c_int32` has the right size, so the verdict still comes out right, but the values you read back for a FAIL report are garbage.
+- Allocating buffers of the wrong size or element type. Too small, and the kernel writes past the end of the allocation. A `float` buffer allocated as `c_int32` has the right size, so the outcome still comes out right, but the values you read back for a MISMATCH report are garbage.
 - Inlining a body with an ALLOC twice without fresh slots.
 - Passing buffers in the wrong order. The calling convention is "increasing slot order"; sort, do not rely on the order you met them.
 
@@ -597,7 +641,7 @@ The check is deliberately coarse: it treats two accesses to *different* elements
 The window fits for every possible loaded value, so the program is valid, although the compiler never knows the value (it is 5 at run time, so the offset is 2).
 
 > **Predict.** What if the offset were `mod … 4`?
-> <details><summary>Answer</summary>Its bounds would be <code>[0, 3]</code>, and <code>3 + 2 = 5 &gt; 4</code>: the window could reach element 4, past the end. ERROR, even though the actual value, 5 mod 4 = 1, would fit.</details>
+> <details><summary>Answer</summary>Its bounds would be <code>[0, 3]</code>, and <code>3 + 2 = 5 &gt; 4</code>: the window could reach element 4, past the end. REJECTED, even though the actual value, 5 mod 4 = 1, would fit.</details>
 
 **The new rules at a glance.** One invalid program per rule, with what the oracle says about it:
 
@@ -679,10 +723,15 @@ All in [examples/](examples/). Each file's comments show the hand calculation. T
 | [chained_stores.uir](examples/chained_stores.uir) | A load and store that depend on an earlier store |
 | [shrink_window.uir](examples/shrink_window.uir) | `SHRINK` as a window |
 | [symbolic_offset.uir](examples/symbolic_offset.uir) | A `SHRINK` offset loaded at run time, proven in range by bounds |
+| [recip.uir](examples/recip.uir) | `CAST` to `f32`, then `RECIP` |
+| [f32_literal.uir](examples/f32_literal.uir) | An integer literal adapts to an `f32` operand |
+| [f32_round.uir](examples/f32_round.uir) | `f32` rounds after every op, not once at the end |
 | [f32_buffer.uir](examples/f32_buffer.uir) | Literals typed by an `f32` target |
 | [alloc_in_call.uir](examples/alloc_in_call.uir) | `ALLOC` scratch memory, one per call |
 
 ## Spec notes
+
+> **Interpretation.** The syllabus lists `f32` and `RECIP` among week 1's recursive properties and ops, but the released week 1 reference has only `i32` and `bool`, and no `recip`. This chapter introduces `f32`, float literals and `RECIP` (Lesson 1), because it is the first chapter where `f32` data exists (buffers) and where the C compiler's float rounding matters. The rules are uir.md's ([literals](../uir.md#literals), [arithmetic](../uir.md#arithmetic)), which follow tinygrad. If a later reference puts `f32` somewhere else, this section moves with it.
 
 > **Spec note.** The draft course page puts "render and execute C programs" in week 3; the syllabus puts the renderer and runtime in week 2. This chapter follows the syllabus.
 
@@ -700,14 +749,14 @@ All in [examples/](examples/). Each file's comments show the hand calculation. T
    <details><summary>Answer</summary>The same buffer, with a promise that its users run after <code>%write</code>. Loading <code>%buf</code> directly would leave the load and store unordered, which is invalid.</details>
 2. Why must the renderer compile with `-ffp-contract=off`?
    <details><summary>Answer</summary>Otherwise the C compiler may fuse <code>a * b + c</code> into one fused multiply-add, which rounds once instead of twice, so the C result could differ from the interpreter's.</details>
-3. Write C for `mod a b` on `i32` without a helper function.
-   <details><summary>Answer</summary><code>(a % b != 0 && (a % b < 0) != (b < 0)) ? a % b + b : a % b</code>.</details>
+3. Why can the renderer not print C's `a / b` for `div a b`, even when both are positive?
+   <details><summary>Answer</summary>Because <code>b</code> may be zero, which C leaves undefined and UIR defines as <code>-1</code> (and <code>a % 0</code> as <code>a</code>). Negative operands truncate where UIR floors, and <code>INT32_MIN / -1</code> overflows. The helpers handle all three.</details>
 4. In [alloc_in_call.uir](examples/alloc_in_call.uir) the body's ALLOC has slot 0. Which slots do the two inlined ALLOCs get, and why not 0 again?
    <details><summary>Answer</summary>1 and 2: each fresh slot is one past the highest in use. Reusing 0 would rebuild the same hash-consed node, so both calls would share one scratch area again.</details>
 5. Why does "fully ordered" mean that any topological order of the graph gives the same result?
    <details><summary>Answer</summary>Every pair of accesses whose order matters (one is a store, same buffer) is connected by a dependency, and every topological order respects every dependency.</details>
-6. A rank-0 buffer renders as `buf0[0]` and a rank-1 buffer as `buf0`. Why the difference?
-   <details><summary>Answer</summary>Both are pointer parameters. A rank-0 buffer is used as one value, so the renderer names its only element, <code>buf0[0]</code>; a rank-1 buffer is indexed, so <code>INDEX</code> appends <code>[i]</code> to the pointer's name.</details>
+6. Is the rule `x + 0 → x` correct for `f32`? And what is `add (add 16777216.0 1.0) 1.0` in `f32`?
+   <details><summary>Answer</summary>No: for <code>x = -0.0</code>, <code>-0.0 + 0.0</code> is <code>+0.0</code>, so the rule changes the sign. And <code>16777216.0</code>: each <code>+ 1.0</code> rounds back, because 2^24 + 1 is not an <code>f32</code>.</details>
 7. Why does the renderer give every LOAD its own variable, instead of writing `buf0[0]` straight into the expression that uses it?
    <details><summary>Answer</summary>The LOAD must read memory at its place in the order. Written inline into a later line, it would read after any store emitted in between.</details>
 8. Why does the runtime name each library file after a hash of its source and flags?
@@ -720,4 +769,5 @@ All in [examples/](examples/). Each file's comments show the hand calculation. T
 3. Bryant & O'Hallaron, *Computer Systems: A Programmer's Perspective*, 3rd ed. https://csapp.cs.cmu.edu/ — ch. 7, linking and shared libraries.
 4. Kahn, "Topological Sorting of Large Networks", CACM 1962. https://doi.org/10.1145/368996.369025 — topological order.
 5. McKeeman, "Differential Testing for Software", Digital Technical Journal 10(1), 1998, pp. 100–107. https://www.cs.tufts.edu/comp/150FP/archive/bill-mckeeman/DifferentailTesting.pdf — testing compilers by running one input through two implementations and comparing.
-6. tinygrad, commit 07821cae. https://github.com/tinygrad/tinygrad — `tinygrad/renderer/cstyle.py` (a C renderer), `tinygrad/runtime/ops_cpu.py` (a CPU runtime), `tinygrad/uop/ops.py` (`addrspace`, `storage_base`).
+6. Figueroa, "When is double rounding innocuous?", ACM SIGNUM Newsletter 30(3) 1995. https://doi.org/10.1145/221332.221334 — why computing an `f32` op in 64-bit and rounding once gives the exact `f32` result.
+7. tinygrad, commit 07821cae. https://github.com/tinygrad/tinygrad — `tinygrad/renderer/cstyle.py` (a C renderer), `tinygrad/runtime/ops_cpu.py` (a CPU runtime), `tinygrad/uop/ops.py` (`addrspace`, `storage_base`).

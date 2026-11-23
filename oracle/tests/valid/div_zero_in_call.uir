@@ -1,0 +1,7 @@
+# div by zero is defined, so a parameter may be zero: 1 div 0 = -1, and 1 mod 0 = 1.
+%p    = param [] slot=0 dtype=i32 addrspace=ALU
+%q    = div 1 %p
+%m    = mod 1 %p
+%s    = add %q %m
+%r    = call %s 0
+%test = assert %r 0

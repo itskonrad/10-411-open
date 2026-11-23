@@ -1,0 +1,7 @@
+# expect: bounds
+# The argument 5 does not fit the param's limits [0 2].
+%i = param [] [0 2] slot=0 dtype=i32 addrspace=ALU
+%v = [10 20 30]
+%x = index %v %i
+%r = call %x 5
+%test = assert %r 20

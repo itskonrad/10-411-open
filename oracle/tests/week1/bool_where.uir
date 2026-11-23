@@ -1,0 +1,4 @@
+# cmplt gives bool; where selects: min(3, 5) = 3. Bools are true and false.
+%c    = cmplt 3 5
+%m    = where %c 3 5
+%test = assert %m 3

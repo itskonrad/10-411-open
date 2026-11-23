@@ -1,0 +1,4 @@
+# expect: shape
+# cast takes a scalar too.
+%x    = cast [1 2] dtype=bool
+%test = assert 1 1

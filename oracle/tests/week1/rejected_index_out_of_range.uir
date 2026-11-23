@@ -1,0 +1,5 @@
+# expect: bounds
+# Index 3 is past the end of a three-element stack.
+%v = [10 20 30]
+%x = index %v 3
+%test = assert %x 0

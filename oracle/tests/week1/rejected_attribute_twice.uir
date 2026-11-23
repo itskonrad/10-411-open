@@ -1,0 +1,4 @@
+# expect: arg
+# Attribute keys are unique.
+%x = cast 1 dtype=bool dtype=bool
+%test = assert %x true

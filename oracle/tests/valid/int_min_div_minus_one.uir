@@ -1,0 +1,4 @@
+# -2147483648 div -1 is 2147483648, which wraps to -2147483648 (i32 values wrap on overflow).
+# The week 1 reference does not spell this case out; it follows from "values wrap on overflow".
+%q    = div -2147483648 -1
+%test = assert %q -2147483648

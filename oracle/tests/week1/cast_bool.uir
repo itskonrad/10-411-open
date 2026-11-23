@@ -1,0 +1,4 @@
+# cast to bool is 'not zero'; cast to i32 gives 0 or 1.
+%b    = cast 5 dtype=bool
+%i    = cast %b dtype=i32
+%test = assert %i 1

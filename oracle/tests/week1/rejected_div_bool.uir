@@ -1,0 +1,4 @@
+# expect: dtype
+# div, mod and shl are i32 only.
+%q = div true true
+%test = assert %q true

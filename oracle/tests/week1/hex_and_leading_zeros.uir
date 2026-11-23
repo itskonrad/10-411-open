@@ -1,0 +1,3 @@
+# Hex literals, and decimal literals with leading zeros, are integers: 0xff + 007 = 262.
+%x    = add 0xff 007
+%test = assert %x 262

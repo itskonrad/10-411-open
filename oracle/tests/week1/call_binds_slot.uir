@@ -1,0 +1,5 @@
+# The reference's first example: the call binds slot 0 to 3, so the body computes 3 + 3 = 6.
+%x    = param [] slot=0 dtype=i32 addrspace=ALU
+%s    = add %x %x
+%v    = call %s 3
+%test = assert %v 6

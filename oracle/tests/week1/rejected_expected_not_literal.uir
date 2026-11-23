@@ -1,0 +1,5 @@
+# expect: root
+# The expected value is a literal or a stack of literals, not a computation.
+%a = add 1 1
+%b = add 2 0
+%test = assert %a %b

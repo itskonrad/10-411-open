@@ -1,0 +1,6 @@
+# expect: shape
+# Week 1 requires the scalar shape [] on a param.
+%x = param 3 slot=0 dtype=i32 addrspace=ALU
+%f = index %x 0
+%r = call %f [1 2 3]
+%test = assert %r 1

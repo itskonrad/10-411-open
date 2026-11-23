@@ -1,0 +1,3 @@
+# i32 values wrap on overflow.
+%big  = add 2147483647 1
+%test = assert %big -2147483648

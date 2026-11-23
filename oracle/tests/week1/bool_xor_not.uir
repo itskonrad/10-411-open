@@ -1,0 +1,3 @@
+# not c is xor c true.
+%n    = xor false true
+%test = assert %n true

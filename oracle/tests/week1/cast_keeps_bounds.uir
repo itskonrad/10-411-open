@@ -1,0 +1,7 @@
+# cast to the source's own dtype keeps its bounds: %i is in [0, 2], so the cast is too, and index is safe.
+%i    = param [] [0 2] slot=0 dtype=i32 addrspace=ALU
+%c    = cast %i dtype=i32
+%v    = [10 20 30]
+%x    = index %v %c
+%r    = call %x 2
+%test = assert %r 30

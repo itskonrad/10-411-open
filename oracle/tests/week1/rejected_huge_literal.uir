@@ -1,0 +1,4 @@
+# expect: dtype
+# A literal far too big for i32 is rejected cleanly, not by a crash.
+%x    = add 99999999999999999999999999999999999999999999999999999999 0
+%test = assert %x 0

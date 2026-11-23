@@ -1,0 +1,5 @@
+# expect: shape
+# where takes scalars: the condition, and both branches.
+%c    = [true false]
+%x    = where %c [1 2] [3 4]
+%test = assert 1 1

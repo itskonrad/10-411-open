@@ -1,0 +1,6 @@
+# expect: arg
+# Week 1 requires addrspace=ALU on a param.
+%x = param [] slot=0 dtype=i32
+%f = add %x 1
+%r = call %f 1
+%test = assert %r 2

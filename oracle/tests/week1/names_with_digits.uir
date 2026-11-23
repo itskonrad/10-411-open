@@ -1,0 +1,4 @@
+# A name is % then letters, digits or underscores; `%x=` and `%x =` are one token.
+%0= add 1 2
+%a_1 = add %0 3
+%test=assert %a_1 6

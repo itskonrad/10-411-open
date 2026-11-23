@@ -1,0 +1,4 @@
+# expect: parse
+# The week 1 grammar has no nested (op ...): every op has its own line.
+%x = add (add 1 2) 3
+%test = assert %x 6

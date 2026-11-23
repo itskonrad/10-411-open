@@ -1,0 +1,6 @@
+# f32 rounds after every op. 2^24 = 16777216 is the first f32 whose successor is not representable,
+# so 16777216 + 1 rounds back to 16777216 (ties to even), twice. Rounding once at the end would give 16777218.
+%big  = cast 16777216 dtype=f32
+%a    = add %big 1
+%b    = add %a 1
+%test = assert %b 16777216

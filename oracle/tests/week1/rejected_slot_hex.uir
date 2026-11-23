@@ -1,0 +1,6 @@
+# expect: arg
+# slot is an unsigned decimal number: 0x0 is not one, though it is a valid integer literal elsewhere.
+%x    = param [] slot=0x0 dtype=i32 addrspace=ALU
+%f    = add %x 1
+%r    = call %f 1
+%test = assert %r 2

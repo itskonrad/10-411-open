@@ -1,0 +1,4 @@
+# expect: root
+# Every node must be reachable from the assert, even one that is valid.
+%unused = add 1 2
+%test = assert 3 3

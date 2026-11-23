@@ -1,0 +1,5 @@
+# expect: call
+# A param outside a call body is not bound to anything.
+%x = param [] slot=0 dtype=i32 addrspace=ALU
+%y = add %x 1
+%test = assert %y 1

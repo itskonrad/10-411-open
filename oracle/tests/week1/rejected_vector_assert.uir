@@ -1,0 +1,4 @@
+# expect: rank
+# ALU returns must be scalar: a week 1 assert cannot return a vector.
+%v = [1 2 3]
+%test = assert %v [1 2 3]

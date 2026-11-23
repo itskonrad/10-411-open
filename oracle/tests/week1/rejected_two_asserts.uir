@@ -1,0 +1,4 @@
+# expect: root
+# A file has a single assert, and it is last.
+%a = assert 1 1
+%test = assert 2 2

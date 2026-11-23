@@ -1,0 +1,6 @@
+# expect: bounds
+# The limits [true true] allow only true; the argument false is outside them.
+%b    = param [] [true true] slot=0 dtype=bool addrspace=ALU
+%n    = xor %b true
+%r    = call %n false
+%test = assert %r true

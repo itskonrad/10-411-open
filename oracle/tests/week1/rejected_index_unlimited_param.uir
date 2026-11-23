@@ -1,0 +1,7 @@
+# expect: bounds
+# Without limits a param spans all of i32, so it is not a safe index.
+%i = param [] slot=0 dtype=i32 addrspace=ALU
+%v = [10 20 30]
+%x = index %v %i
+%r = call %x 1
+%test = assert %r 20

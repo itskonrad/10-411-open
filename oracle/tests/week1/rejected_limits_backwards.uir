@@ -1,0 +1,6 @@
+# expect: arg
+# Limits [l h] need l <= h.
+%i = param [] [3 0] slot=0 dtype=i32 addrspace=ALU
+%f = add %i 1
+%r = call %f 1
+%test = assert %r 2

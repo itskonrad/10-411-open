@@ -1,0 +1,4 @@
+# expect: parse
+# No scoped blocks.
+%x = { %a = 1 }
+%test = assert %x 1

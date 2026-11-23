@@ -1,0 +1,5 @@
+# Attributes follow all sources, in any order.
+%x    = param [] addrspace=ALU dtype=i32 slot=0
+%f    = add %x 1
+%r    = call %f 41
+%test = assert %r 42

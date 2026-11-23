@@ -1,0 +1,5 @@
+# expect: parse
+# Each name is defined once.
+%x = add 1 2
+%x = add 3 4
+%test = assert %x 7

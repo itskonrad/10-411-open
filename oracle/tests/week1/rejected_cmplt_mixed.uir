@@ -1,0 +1,4 @@
+# expect: dtype
+# cmplt requires the same dtype on both sides.
+%c = cmplt 1 true
+%test = assert %c true
